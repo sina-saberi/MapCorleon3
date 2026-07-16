@@ -19,10 +19,9 @@ public partial class App : Application
     public static IServiceProvider Services => ((App)Current)._host.Services;
     private readonly IHost _host = Host.CreateDefaultBuilder().ConfigureServices(services =>
     {
-        var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MapCorleon");
-        Directory.CreateDirectory(root);
-        services.AddDbContextFactory<AppDbContext>(o => o.UseSqlite($"Data Source={Path.Combine(root, "mapcorleon.db")}"));
         services.AddSingleton<ISettingsService, JsonSettingsService>();
+        services.AddDbContextFactory<AppDbContext>((provider, options) =>
+            options.UseSqlite($"Data Source={provider.GetRequiredService<ISettingsService>().Current.DatabasePath}"));
         services.AddSingleton(CreateImportHttpClient());
         services.AddSingleton<IEventBus, EventBus>();
         services.AddSingleton<IMapPickService, MapPickService>();

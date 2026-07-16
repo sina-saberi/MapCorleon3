@@ -32,15 +32,5 @@ public sealed class TileCacheService(ISettingsService settings) : ITileCacheServ
     }
 
     public Task ClearExpiredAsync(CancellationToken ct = default)
-    {
-        if (!Directory.Exists(settings.Current.TileDirectory))
-            return Task.CompletedTask;
-
-        var expiredFiles = Directory
-            .EnumerateFiles(settings.Current.TileDirectory, "*.tile", SearchOption.AllDirectories)
-            .Where(path => DateTime.UtcNow - File.GetLastWriteTimeUtc(path) >= settings.Current.TileMaxAge);
-
-        foreach (var path in expiredFiles) File.Delete(path);
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 }

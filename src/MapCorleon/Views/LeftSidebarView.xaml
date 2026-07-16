@@ -11,9 +11,49 @@
                      ToolTip="Search locations, categories, and groups" />
 
             <UniformGrid DockPanel.Dock="Top" Columns="3">
-                <Button Content="Marked" Command="{Binding ShowMarkedCommand}" />
-                <Button Content="Unmarked" Command="{Binding ShowUnmarkedCommand}" />
-                <Button Content="All" Command="{Binding ShowAllCommand}" />
+                <UniformGrid.Resources>
+                    <Style TargetType="ToggleButton">
+                        <Setter Property="Padding" Value="12,7"/>
+                        <Setter Property="Margin" Value="3"/>
+                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                        <Setter Property="Background" Value="{StaticResource RaisedBrush}"/>
+                        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Chrome"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Chrome" Property="Background" Value="#2D3C52"/>
+                                        </Trigger>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Chrome" Property="Background" Value="#315B9C"/>
+                                            <Setter TargetName="Chrome" Property="BorderBrush" Value="#79A9F2"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </UniformGrid.Resources>
+                <ToggleButton Content="Marked"
+                              IsChecked="{Binding IsMarkedFilter, Mode=OneWay}"
+                              Command="{Binding ShowMarkedCommand}" />
+                <ToggleButton Content="Unmarked"
+                              IsChecked="{Binding IsUnmarkedFilter, Mode=OneWay}"
+                              Command="{Binding ShowUnmarkedCommand}" />
+                <ToggleButton Content="All"
+                              IsChecked="{Binding IsAllFilter, Mode=OneWay}"
+                              Command="{Binding ShowAllCommand}" />
             </UniformGrid>
 
             <Button DockPanel.Dock="Top"
@@ -49,11 +89,23 @@
                                     <ItemsControl ItemsSource="{Binding Categories}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <CheckBox Margin="8,4"
-                                                          Content="{Binding Name}"
-                                                          IsChecked="{Binding IsVisible, Mode=TwoWay}"
-                                                          Command="{Binding DataContext.ToggleCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                          CommandParameter="{Binding}" />
+                                                <Grid Margin="8,4">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox Content="{Binding Name}"
+                                                              IsChecked="{Binding IsVisible, Mode=TwoWay}"
+                                                              Command="{Binding DataContext.ToggleCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Margin="8,0,3,0"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="{StaticResource MutedTextBrush}"
+                                                               FontWeight="SemiBold"
+                                                               Text="{Binding ProgressText}"
+                                                               ToolTip="Total locations / picked locations"/>
+                                                </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

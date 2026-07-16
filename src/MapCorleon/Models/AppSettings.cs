@@ -1,17 +1,19 @@
 using System.IO;
+using System.Text.Json.Serialization;
 
 namespace MapCorleon.Models;
 
 public sealed record AppSettings(
-    string TileDirectory,
-    string StorageDirectory,
-    string DatabaseDirectory,
+    string DataDirectory,
     MarkFilter Filter,
     Dictionary<int, bool> CategoryVisibility,
-    TimeSpan TileMaxAge,
     string? CurrentMapName = null,
     int? CurrentTimelineId = null)
 {
+    [JsonIgnore] public string TileDirectory => Path.Combine(DataDirectory, "tiles");
+    [JsonIgnore] public string StorageDirectory => Path.Combine(DataDirectory, "storage");
+    [JsonIgnore] public string DatabasePath => Path.Combine(DataDirectory, "mapcorleon.db");
+
     public static AppSettings Default
     {
         get
@@ -19,14 +21,7 @@ public sealed record AppSettings(
             var root = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "MapCorleon");
-
-            return new AppSettings(
-                TileDirectory: Path.Combine(root, "tiles"),
-                StorageDirectory: Path.Combine(root, "storage"),
-                DatabaseDirectory: root,
-                Filter: MarkFilter.All,
-                CategoryVisibility: [],
-                TileMaxAge: TimeSpan.FromDays(30));
+            return new AppSettings(root, MarkFilter.All, []);
         }
     }
 }

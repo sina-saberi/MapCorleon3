@@ -93,6 +93,9 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(Query);
     public string? CurrentMapName => currentMapName;
+    public bool IsAllFilter => MarkFilter == MarkFilter.All;
+    public bool IsMarkedFilter => MarkFilter == MarkFilter.Marked;
+    public bool IsUnmarkedFilter => MarkFilter == MarkFilter.Unmarked;
     public string MarkActionText => SelectedLocation?.Marks.Count > 0 ? "Unmark" : "Mark";
     public int PickedCount => allLocations.Count(location => location.Marks.Count > 0);
     public int TotalCount => allLocations.Count;
@@ -143,6 +146,9 @@ public sealed class ShellViewModel : ViewModelBase
         set
         {
             if (!Set(ref markFilter, value)) return;
+            OnPropertyChanged(nameof(IsAllFilter));
+            OnPropertyChanged(nameof(IsMarkedFilter));
+            OnPropertyChanged(nameof(IsUnmarkedFilter));
             PersistFilterAsync();
             RefreshLocations();
         }
@@ -174,6 +180,7 @@ public sealed class ShellViewModel : ViewModelBase
             await LoadTimelinesAsync(map.Id);
 
             allLocations = await locationService.LoadAsync(map.Id, SelectedTimeline?.Id ?? 0);
+            UpdateCategoryProgress();
             SelectedLocation = null;
             RefreshLocations();
             await PersistSelectionAsync();
@@ -190,6 +197,7 @@ public sealed class ShellViewModel : ViewModelBase
         SelectedTimeline = Timelines.FirstOrDefault(timeline => timeline.Id == timelineId);
         if (SelectedTimeline is null) return;
         allLocations = await locationService.LoadAsync(CurrentMap.Id, SelectedTimeline.Id);
+        UpdateCategoryProgress();
         SelectedLocation = null;
         RefreshLocations();
     }
@@ -239,6 +247,7 @@ public sealed class ShellViewModel : ViewModelBase
         var selectedId = SelectedLocation.Id;
         await locationService.ToggleMarkedAsync(selectedId, SelectedTimeline.Id);
         allLocations = await locationService.LoadAsync(CurrentMap.Id, SelectedTimeline.Id);
+        UpdateCategoryProgress();
         SelectedLocation = allLocations.FirstOrDefault(location => location.Id == selectedId);
         RefreshLocations();
     }
@@ -285,6 +294,20 @@ public sealed class ShellViewModel : ViewModelBase
     }
 
     private Task PersistFilterAsync() => settingsService.SaveAsync(settingsService.Current with { Filter = MarkFilter });
+
+    private void UpdateCategoryProgress()
+    {
+        var counts = allLocations
+            .GroupBy(location => location.CategoryId)
+            .ToDictionary(
+                group => group.Key,
+                group => (Total: group.Count(), Picked: group.Count(location => location.Marks.Count > 0)));
+        foreach (var category in Groups.SelectMany(group => group.Categories))
+        {
+            var progress = counts.GetValueOrDefault(category.Id);
+            category.SetProgress(progress.Total, progress.Picked);
+        }
+    }
 
     private Task PersistSelectionAsync() => settingsService.SaveAsync(settingsService.Current with
     {

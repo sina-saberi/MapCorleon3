@@ -105,6 +105,8 @@ public partial class MapView
         var tileBounds = string.IsNullOrWhiteSpace(config.TileBoundsJson)
             ? null
             : JsonSerializer.Deserialize<Dictionary<int, MapCorleon.Contracts.TileRange>>(config.TileBoundsJson);
+        if (tileBounds is not null && tileBounds.TryGetValue(minimumZoom, out var minimumBounds))
+            tileSchema.Extent = TileBoundsToExtent(tileSchema, minimumZoom, minimumBounds);
         var tileHttpClient = new HttpClient(new ProviderTileHandler(provider, template, tileBounds));
         tileHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd(TileUserAgent);
         var map = new Mapsui.Map { CRS = "EPSG:3857", BackColor = new Color(17, 25, 35) };
@@ -122,6 +124,20 @@ public partial class MapView
         var zoom = Math.Clamp((int)Math.Round(config.DefaultZoom), minimumZoom, maximumZoom);
         map.Navigator.CenterOnAndZoomTo(center, tileSchema.Resolutions[zoom].UnitsPerPixel, 0);
         StatusText.Text = $"Mapsui • {viewModel?.VisibleLocations.Count ?? 0} locations";
+    }
+
+    private static Extent TileBoundsToExtent(
+        GlobalSphericalMercator schema,
+        int zoom,
+        MapCorleon.Contracts.TileRange bounds)
+    {
+        var resolution = schema.Resolutions[zoom].UnitsPerPixel;
+        var tileSpan = resolution * 256d;
+        var minX = schema.OriginX + bounds.MinX * tileSpan;
+        var maxX = schema.OriginX + (bounds.MaxX + 1) * tileSpan;
+        var maxY = schema.OriginY - bounds.MinY * tileSpan;
+        var minY = schema.OriginY - (bounds.MaxY + 1) * tileSpan;
+        return new Extent(minX, minY, maxX, maxY);
     }
 
     private void RebuildLocations()

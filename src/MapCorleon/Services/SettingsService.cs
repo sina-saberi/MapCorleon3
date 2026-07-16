@@ -19,27 +19,58 @@ public sealed class JsonSettingsService : ISettingsService
 
     public JsonSettingsService()
     {
-        try
-        {
-            Current = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path))
-                ?? AppSettings.Default;
-        }
-        catch
-        {
-            Current = AppSettings.Default;
-        }
+        Current = Load();
+        EnsureDirectories(Current);
     }
 
     public AppSettings Current { get; private set; }
 
     public async Task SaveAsync(AppSettings settings)
     {
+        settings = settings with { DataDirectory = Path.GetFullPath(settings.DataDirectory.Trim()) };
+        EnsureDirectories(settings);
         Current = settings;
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        Directory.CreateDirectory(settings.StorageDirectory);
-        Directory.CreateDirectory(settings.TileDirectory);
-
         var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(path, json);
+    }
+
+    private AppSettings Load()
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            var root = document.RootElement;
+            if (root.TryGetProperty(nameof(AppSettings.DataDirectory), out _))
+                return JsonSerializer.Deserialize<AppSettings>(root.GetRawText()) ?? AppSettings.Default;
+
+            // Migrate the former three-directory settings. DatabaseDirectory is the
+            // closest equivalent to the new common data root.
+            var legacyRoot = root.TryGetProperty("DatabaseDirectory", out var database)
+                ? database.GetString()
+                : null;
+            var filter = root.TryGetProperty("Filter", out var filterValue)
+                ? (MarkFilter)filterValue.GetInt32()
+                : MarkFilter.All;
+            var visibility = root.TryGetProperty("CategoryVisibility", out var categories)
+                ? JsonSerializer.Deserialize<Dictionary<int, bool>>(categories.GetRawText()) ?? []
+                : [];
+            var map = root.TryGetProperty("CurrentMapName", out var mapValue) ? mapValue.GetString() : null;
+            int? timeline = root.TryGetProperty("CurrentTimelineId", out var timelineValue) &&
+                            timelineValue.ValueKind == JsonValueKind.Number
+                ? timelineValue.GetInt32()
+                : null;
+            return new AppSettings(
+                string.IsNullOrWhiteSpace(legacyRoot) ? AppSettings.Default.DataDirectory : legacyRoot,
+                filter, visibility, map, timeline);
+        }
+        catch { return AppSettings.Default; }
+    }
+
+    private static void EnsureDirectories(AppSettings settings)
+    {
+        Directory.CreateDirectory(settings.DataDirectory);
+        Directory.CreateDirectory(settings.StorageDirectory);
+        Directory.CreateDirectory(settings.TileDirectory);
     }
 }

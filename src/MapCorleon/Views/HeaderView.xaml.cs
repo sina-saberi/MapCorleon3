@@ -10,13 +10,28 @@ namespace MapCorleon.Views;
 public partial class HeaderView : UserControl
 {
     private readonly IImportTaskService tasks;
+    private bool subscribed;
     public HeaderView()
     {
         InitializeComponent();
         tasks = App.Services.GetRequiredService<IImportTaskService>();
-        tasks.PropertyChanged += TasksChanged;
-        Unloaded += (_, _) => tasks.PropertyChanged -= TasksChanged;
+        Loaded += (_, _) => Subscribe();
+        Unloaded += (_, _) => Unsubscribe();
+        Subscribe();
         RefreshTask();
+    }
+    private void Subscribe()
+    {
+        if (subscribed) return;
+        tasks.PropertyChanged += TasksChanged;
+        subscribed = true;
+        RefreshTask();
+    }
+    private void Unsubscribe()
+    {
+        if (!subscribed) return;
+        tasks.PropertyChanged -= TasksChanged;
+        subscribed = false;
     }
     private Window Owner => Window.GetWindow(this);
     private void TasksChanged(object? sender, PropertyChangedEventArgs e) => Dispatcher.Invoke(RefreshTask);

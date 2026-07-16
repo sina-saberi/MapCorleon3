@@ -6,7 +6,7 @@ MapCorleon is a .NET 8 WPF application organized by feature and layer. `Views` a
 
 SQLite is used through EF Core. The model maps exactly to `Games`, `Maps`, `Map Config`, `Groups`, `Categories`, `Locations`, `Media`, `Timelines`, `Pins`, and `Marked Locations`, with the required foreign keys, cascade behavior, uniqueness constraints, and lookup indexes. Mark/unmark and custom-location edits call `SaveChangesAsync` in their operation, so no global save exists. On first start a minimal map and mandatory default timeline are seeded. Timeline replacement creates `Default` if the submitted collection is empty.
 
-Settings are JSON outside the database so the database directory can be changed safely. Saving settings creates new directories but never deletes or truncates old data. Mark filtering and category visibility are persisted; search text is deliberately transient.
+Settings are JSON outside the database. One `DataDirectory` setting owns `mapcorleon.db`, `tiles/`, and `storage/`; changing it takes effect after restart and never moves or deletes existing files automatically. Mark filtering and category visibility are persisted; search text is deliberately transient.
 
 ## Map rendering choice
 
@@ -16,7 +16,7 @@ Provider sprite atlases are rendered with Mapsui v5 `ImageStyle` and `BitmapRegi
 
 ## Offline tiles
 
-Mapsui owns tile calculation and fetch scheduling. Its BruTile `HttpTileSource` receives the provider's `{z}/{x}/{y}` template, while the actual HTTP request is delegated to the selected `IMapProvider`. Tiles are isolated by a hash of the template under `tiles/mapsui/{providerHash}/{zoom}/{x}/{y}.tile`; once downloaded they are always loaded locally unless the cache is explicitly cleared.
+Mapsui owns tile calculation and fetch scheduling. Its BruTile `HttpTileSource` receives the provider's `{z}/{x}/{y}` template, while the actual HTTP request is delegated to the selected `IMapProvider`. Tiles are isolated by a hash of the template under `tiles/mapsui/{providerHash}/{zoom}/{x}/{y}.tile`. Cached tiles never expire and are always loaded locally unless the user explicitly removes them.
 
 ## Media
 
