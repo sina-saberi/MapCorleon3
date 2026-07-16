@@ -1,1 +1,2 @@
-using System.Windows;namespace MapCorleon.Dialogs;public partial class SettingsDialog:Window{public SettingsDialog(){InitializeComponent();var s=Models.AppSettings.Default;Tile.Text=s.TileDirectory;Storage.Text=s.StorageDirectory;Database.Text=s.DatabaseDirectory;}void Save_Click(object s,RoutedEventArgs e){DialogResult=true;}}
+using System.Windows;
+namespace MapCorleon.Dialogs; public partial class SettingsDialog : Window { public SettingsDialog() { InitializeComponent(); var s = Models.AppSettings.Default; Tile.Text = s.TileDirectory; Storage.Text = s.StorageDirectory; Database.Text = s.DatabaseDirectory; } void Save_Click(object s, RoutedEventArgs e) { DialogResult = true; } }

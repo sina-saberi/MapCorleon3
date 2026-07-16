@@ -54,17 +54,17 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
         var existingCategories = await db.Categories.Where(x => groupIds.Contains(x.GroupId)).ToListAsync(ct);
         var categories = new Dictionary<long, Category>();
         foreach (var importedGroup in source.Groups)
-        foreach (var importedCategory in importedGroup.Categories)
-        {
-            var group = groupEntities[importedGroup.ExternalId];
-            var category = existingCategories.FirstOrDefault(x => x.GroupId == group.Id && x.ExternalId == importedCategory.ExternalId)
-                ?? existingCategories.FirstOrDefault(x => x.GroupId == group.Id && x.ExternalId is null && x.Name == importedCategory.Name)
-                ?? new Category { GroupId = group.Id, Name = importedCategory.Name };
-            category.ExternalId = importedCategory.ExternalId; category.Name = importedCategory.Name; category.IsVisible = importedCategory.IsVisible;
-            category.IconKey = importedCategory.IconKey; category.IconX = importedCategory.Sprite?.X; category.IconY = importedCategory.Sprite?.Y;
-            category.IconWidth = importedCategory.Sprite?.Width; category.IconHeight = importedCategory.Sprite?.Height; category.IconPixelRatio = importedCategory.Sprite?.PixelRatio;
-            if (category.Id == 0) db.Categories.Add(category); categories[importedCategory.ExternalId] = category;
-        }
+            foreach (var importedCategory in importedGroup.Categories)
+            {
+                var group = groupEntities[importedGroup.ExternalId];
+                var category = existingCategories.FirstOrDefault(x => x.GroupId == group.Id && x.ExternalId == importedCategory.ExternalId)
+                    ?? existingCategories.FirstOrDefault(x => x.GroupId == group.Id && x.ExternalId is null && x.Name == importedCategory.Name)
+                    ?? new Category { GroupId = group.Id, Name = importedCategory.Name };
+                category.ExternalId = importedCategory.ExternalId; category.Name = importedCategory.Name; category.IsVisible = importedCategory.IsVisible;
+                category.IconKey = importedCategory.IconKey; category.IconX = importedCategory.Sprite?.X; category.IconY = importedCategory.Sprite?.Y;
+                category.IconWidth = importedCategory.Sprite?.Width; category.IconHeight = importedCategory.Sprite?.Height; category.IconPixelRatio = importedCategory.Sprite?.PixelRatio;
+                if (category.Id == 0) db.Categories.Add(category); categories[importedCategory.ExternalId] = category;
+            }
         await db.SaveChangesAsync(ct);
 
         var categoryIds = categories.Values.Select(x => x.Id).ToList();

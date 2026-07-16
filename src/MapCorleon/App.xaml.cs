@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace MapCorleon;
+
 public partial class App : Application
 {
     public static IServiceProvider Services => ((App)Current)._host.Services;
