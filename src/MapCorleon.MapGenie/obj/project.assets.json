@@ -12,6 +12,18 @@
           "bin/placeholder/MapCorleon.Contracts.dll": {}
         }
       }
+    },
+    "net8.0/win-x64": {
+      "MapCorleon.Contracts/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/MapCorleon.Contracts.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/MapCorleon.Contracts.dll": {}
+        }
+      }
     }
   },
   "libraries": {
@@ -99,11 +111,23 @@
             "version": "[8.0.28, 8.0.28]"
           },
           {
+            "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
+            "version": "[8.0.28, 8.0.28]"
+          },
+          {
             "name": "Microsoft.NETCore.App.Ref",
             "version": "[8.0.28, 8.0.28]"
           },
           {
+            "name": "Microsoft.NETCore.App.Runtime.win-x64",
+            "version": "[8.0.28, 8.0.28]"
+          },
+          {
             "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[8.0.28, 8.0.28]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
             "version": "[8.0.28, 8.0.28]"
           }
         ],
@@ -113,6 +137,11 @@
           }
         },
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
+      }
+    },
+    "runtimes": {
+      "win-x64": {
+        "#import": []
       }
     }
   }

@@ -36,6 +36,7 @@ public partial class App : Application
         services.AddSingleton<IMapProvider, MapGenieProvider>();
         services.AddSingleton<IMapProviderResolver, MapProviderResolver>();
         services.AddSingleton<IImportTaskService, ImportTaskService>();
+        services.AddSingleton<ITrayService, TrayService>();
         services.AddSingleton<ShellViewModel>(); services.AddSingleton<MainWindow>();
     }).Build();
 
@@ -66,5 +67,12 @@ public partial class App : Application
         await DbSeeder.SeedAsync(db);
         _host.Services.GetRequiredService<MainWindow>().Show(); base.OnStartup(e);
     }
-    protected override async void OnExit(ExitEventArgs e) { await _host.StopAsync(); _host.Dispose(); base.OnExit(e); }
+    protected override async void OnExit(ExitEventArgs e)
+    {
+        if (_host.Services.GetService<ITrayService>() is IDisposable tray)
+            tray.Dispose();
+        await _host.StopAsync();
+        _host.Dispose();
+        base.OnExit(e);
+    }
 }

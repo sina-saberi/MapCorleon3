@@ -4,6 +4,7 @@
     <UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
     <ProjectReference Include="..\MapCorleon.Contracts\MapCorleon.Contracts.csproj" />
     <ProjectReference Include="..\MapCorleon.MapGenie\MapCorleon.MapGenie.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.17" />

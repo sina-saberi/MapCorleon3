@@ -3,11 +3,5 @@
 ################################################################################
 
 /.vs
-/src/MapCorleon/bin
-/src/MapCorleon/obj
-/src/MapCorleon.Import/bin
-/src/MapCorleon.Import/obj
-/src/MapCorleon.Contracts/bin/Release/net8.0
-/src/MapCorleon.Contracts/obj/Release/net8.0
-/src/MapCorleon.MapGenie/bin/Release/net8.0
-/src/MapCorleon.MapGenie/obj/Release/net8.0
+/src/**/bin
+/src/**/obj
