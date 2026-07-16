@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using MapCorleon.Data;
@@ -16,6 +17,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly ISearchService searchService;
     private readonly IEventBus eventBus;
     private readonly ISettingsService settingsService;
+    private readonly IImportTaskService importTasks;
     private readonly DispatcherTimer searchTimer;
 
     private List<Location> allLocations = [];
@@ -28,7 +30,7 @@ public sealed class ShellViewModel : ViewModelBase
     private Map? currentMap;
     private Timeline? selectedTimeline;
 
-    public ShellViewModel(AppDbContext db, ILocationService locationService, IFilterService filterService, ISearchService searchService, IEventBus eventBus, ISettingsService settingsService)
+    public ShellViewModel(AppDbContext db, ILocationService locationService, IFilterService filterService, ISearchService searchService, IEventBus eventBus, ISettingsService settingsService, IImportTaskService importTasks)
     {
         this.db = db;
         this.locationService = locationService;
@@ -36,6 +38,8 @@ public sealed class ShellViewModel : ViewModelBase
         this.searchService = searchService;
         this.eventBus = eventBus;
         this.settingsService = settingsService;
+        this.importTasks = importTasks;
+        importTasks.MediaDownloaded += MediaDownloaded;
 
         markFilter = settingsService.Current.Filter;
         searchTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
@@ -294,6 +298,21 @@ public sealed class ShellViewModel : ViewModelBase
     }
 
     private Task PersistFilterAsync() => settingsService.SaveAsync(settingsService.Current with { Filter = MarkFilter });
+
+    private void MediaDownloaded(object? sender, EventArgs e) =>
+        Application.Current.Dispatcher.InvokeAsync(ReloadMediaAsync);
+
+    private async Task ReloadMediaAsync()
+    {
+        if (CurrentMap is null || SelectedTimeline is null) return;
+        var selectedId = SelectedLocation?.Id;
+        allLocations = await locationService.LoadAsync(CurrentMap.Id, SelectedTimeline.Id);
+        UpdateCategoryProgress();
+        SelectedLocation = selectedId.HasValue
+            ? allLocations.FirstOrDefault(location => location.Id == selectedId.Value)
+            : null;
+        RefreshLocations();
+    }
 
     private void UpdateCategoryProgress()
     {

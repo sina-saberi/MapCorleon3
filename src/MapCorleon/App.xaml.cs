@@ -28,7 +28,9 @@ public partial class App : Application
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped<ILocationService, LocationService>(); services.AddScoped<ITimelineService, TimelineService>();
         services.AddSingleton<IFilterService, FilterService>(); services.AddSingleton<ISearchService, SearchService>();
-        services.AddSingleton<IMediaService, MediaService>(); services.AddSingleton<ITileCacheService, TileCacheService>();
+        services.AddSingleton<IMediaService, MediaService>();
+        services.AddSingleton<IMediaPathResolver, MediaPathResolver>();
+        services.AddSingleton<ITileCacheService, TileCacheService>();
         services.AddSingleton<IProviderStorage, ProviderStorage>();
         services.AddSingleton<IMapImportSink, EfMapImportSink>();
         services.AddSingleton<IMapProvider, MapGenieProvider>();

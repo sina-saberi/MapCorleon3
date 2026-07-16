@@ -16,6 +16,7 @@ public interface IImportTaskService : INotifyPropertyChanged
     bool IsRunning { get; }
     string Status { get; }
     int Percentage { get; }
+    event EventHandler? MediaDownloaded;
     bool TryStart(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles);
 }
 
@@ -31,6 +32,7 @@ public sealed class ImportTaskService(
     public string Status { get => status; private set => Set(ref status, value); }
     public int Percentage { get => percentage; private set => Set(ref percentage, value); }
     public event PropertyChangedEventHandler? PropertyChanged;
+    public event EventHandler? MediaDownloaded;
 
     public bool TryStart(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles)
     {
@@ -48,7 +50,11 @@ public sealed class ImportTaskService(
     {
         try
         {
-            if (downloadMedia) await DownloadMediaAsync(provider.Key, result.MapExternalId);
+            if (downloadMedia)
+            {
+                await DownloadMediaAsync(provider.Key, result.MapExternalId);
+                MediaDownloaded?.Invoke(this, EventArgs.Empty);
+            }
             if (downloadTiles) await DownloadTilesAsync(provider, result.MapExternalId);
             Status = "Offline download complete"; Percentage = 100;
             await Task.Delay(2500);

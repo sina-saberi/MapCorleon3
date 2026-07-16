@@ -13,11 +13,14 @@ public interface ILocationService
     Task AddMediaAsync(int locationId, string file, CancellationToken ct = default);
 }
 
-public sealed class LocationService(AppDbContext db, IMediaService mediaService) : ILocationService
+public sealed class LocationService(
+    AppDbContext db,
+    IMediaService mediaService,
+    IMediaPathResolver mediaPathResolver) : ILocationService
 {
-    public Task<List<Location>> LoadAsync(int mapId, int timelineId, CancellationToken ct = default)
+    public async Task<List<Location>> LoadAsync(int mapId, int timelineId, CancellationToken ct = default)
     {
-        return db.Locations
+        var locations = await db.Locations
             .AsNoTracking()
             .Include(location => location.Category)
                 .ThenInclude(category => category!.Group)
@@ -27,6 +30,11 @@ public sealed class LocationService(AppDbContext db, IMediaService mediaService)
                 location.Category!.Group!.MapId == mapId &&
                 (!location.IsCustom || location.TimelineId == timelineId))
             .ToListAsync(ct);
+
+        foreach (var media in locations.SelectMany(location => location.Media))
+            media.RelativePath = mediaPathResolver.Resolve(media.RelativePath);
+
+        return locations;
     }
 
     public async Task ToggleMarkedAsync(int locationId, int timelineId, CancellationToken ct = default)

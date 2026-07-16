@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.CompilerServices;
 
 namespace MapCorleon.Models;
@@ -18,16 +19,19 @@ public sealed class Category : IEntity, INotifyPropertyChanged
     public int? IconWidth { get; set; }
     public int? IconHeight { get; set; }
     public double? IconPixelRatio { get; set; }
+    [NotMapped]
     public int TotalLocationCount
     {
         get => totalLocationCount;
         private set { if (totalLocationCount == value) return; totalLocationCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressText)); }
     }
+    [NotMapped]
     public int PickedLocationCount
     {
         get => pickedLocationCount;
         private set { if (pickedLocationCount == value) return; pickedLocationCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressText)); }
     }
+    [NotMapped]
     public string ProgressText => $"{TotalLocationCount}/{PickedLocationCount}";
 
     public Group? Group { get; set; }
