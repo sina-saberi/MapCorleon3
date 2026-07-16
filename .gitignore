@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/src/MapCorleon/bin
+/src/MapCorleon/obj
+/src/MapCorleon.Import/bin
+/src/MapCorleon.Import/obj
