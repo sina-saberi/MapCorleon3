@@ -12,6 +12,5 @@ public sealed class EventBus : IEventBus
 {
     public event EventHandler<Location?>? SelectionChanged;
 
-    public void Select(Location? location)
-        => SelectionChanged?.Invoke(this, location);
+    public void Select(Location? location) => SelectionChanged?.Invoke(this, location);
 }

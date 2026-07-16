@@ -4,7 +4,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Windows;
 using MapCorleon.Data;
-using MapCorleon.Import;
+using MapCorleon.Contracts;
+using MapCorleon.MapGenie;
 using MapCorleon.Services;
 using MapCorleon.ViewModels;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,11 @@ public partial class App : Application
         services.AddScoped<ILocationService, LocationService>(); services.AddScoped<ITimelineService, TimelineService>();
         services.AddSingleton<IFilterService, FilterService>(); services.AddSingleton<ISearchService, SearchService>();
         services.AddSingleton<IMediaService, MediaService>(); services.AddSingleton<ITileCacheService, TileCacheService>();
-        services.AddSingleton<IMapImportSink, EfMapImportSink>(); services.AddSingleton<IMapImportProvider, MapGenieImportProvider>();
+        services.AddSingleton<IProviderStorage, ProviderStorage>();
+        services.AddSingleton<IMapImportSink, EfMapImportSink>();
+        services.AddSingleton<IMapProvider, MapGenieProvider>();
+        services.AddSingleton<IMapProviderResolver, MapProviderResolver>();
+        services.AddSingleton<IImportTaskService, ImportTaskService>();
         services.AddSingleton<ShellViewModel>(); services.AddSingleton<MainWindow>();
     }).Build();
 

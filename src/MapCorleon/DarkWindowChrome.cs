@@ -12,10 +12,7 @@ internal static class DarkWindowChrome
 
     public static void Register()
     {
-        EventManager.RegisterClassHandler(
-            typeof(Window),
-            FrameworkElement.LoadedEvent,
-            new RoutedEventHandler(OnWindowLoaded));
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnWindowLoaded));
     }
 
     private static void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -25,10 +22,8 @@ internal static class DarkWindowChrome
         window.Background = new SolidColorBrush(Color.FromRgb(16, 20, 29));
         var handle = new WindowInteropHelper(window).Handle;
         if (handle == IntPtr.Zero) return;
-
         var enabled = 1;
-        if (DwmSetWindowAttribute(handle, DwmUseImmersiveDarkMode, ref enabled, sizeof(int)) != 0)
-            DwmSetWindowAttribute(handle, DwmUseImmersiveDarkModeBefore20H1, ref enabled, sizeof(int));
+        if (DwmSetWindowAttribute(handle, DwmUseImmersiveDarkMode, ref enabled, sizeof(int)) != 0) DwmSetWindowAttribute(handle, DwmUseImmersiveDarkModeBefore20H1, ref enabled, sizeof(int));
     }
 
     [DllImport("dwmapi.dll")]

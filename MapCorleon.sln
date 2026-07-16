@@ -4,7 +4,9 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon", "src\MapCorleon\MapCorleon.csproj", "{128E0204-5E09-47CA-9A89-1DAEC72D04A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Import", "src\MapCorleon.Import\MapCorleon.Import.csproj", "{74AF67D2-D79C-49DB-9802-713CF094B97A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Contracts", "src\MapCorleon.Contracts\MapCorleon.Contracts.csproj", "{74AF67D2-D79C-49DB-9802-713CF094B97A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.MapGenie", "src\MapCorleon.MapGenie\MapCorleon.MapGenie.csproj", "{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,5 +22,9 @@ Global
 		{74AF67D2-D79C-49DB-9802-713CF094B97A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74AF67D2-D79C-49DB-9802-713CF094B97A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74AF67D2-D79C-49DB-9802-713CF094B97A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

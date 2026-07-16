@@ -20,18 +20,13 @@ public sealed class MediaService(ISettingsService settings) : IMediaService
         var blobDirectory = Path.Combine(settings.Current.StorageDirectory, "blobs");
         Directory.CreateDirectory(blobDirectory);
         var blobPath = Path.Combine(blobDirectory, hash + extension);
-        if (!File.Exists(blobPath))
-            File.Copy(file, blobPath);
+        if (!File.Exists(blobPath)) File.Copy(file, blobPath);
 
-        var locationDirectory = Path.Combine(
-            settings.Current.StorageDirectory,
-            "locations",
-            locationId.ToString());
+        var locationDirectory = Path.Combine(settings.Current.StorageDirectory, "locations", locationId.ToString());
         Directory.CreateDirectory(locationDirectory);
 
         var locationPath = Path.Combine(locationDirectory, hash + extension);
-        if (!File.Exists(locationPath))
-            File.Copy(blobPath, locationPath);
+        if (!File.Exists(locationPath)) File.Copy(blobPath, locationPath);
 
         return new Media
         {

@@ -1,10 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.IO;
+using System.Text.Json;
 using Regex = System.Text.RegularExpressions.Regex;
 using Match = System.Text.RegularExpressions.Match;
 using RegexOptions = System.Text.RegularExpressions.RegexOptions;
 using MapCorleon.Data;
-using MapCorleon.Import;
+using MapCorleon.Contracts;
 using MapCorleon.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,13 +25,15 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
         if (game is null) { game = new Game { Name = gameName }; db.Games.Add(game); }
         else game.Name = gameName;
 
-        var map = await db.Maps.Include(x => x.Config).Include(x => x.Timelines)
-            .FirstOrDefaultAsync(x => x.GameId == game.Id && (x.ExternalId == source.ExternalId || x.Name == source.Name), ct);
+        var map = await db.Maps.Include(x => x.Config).Include(x => x.Timelines).FirstOrDefaultAsync(x => x.GameId == game.Id && (x.ExternalId == source.ExternalId || x.Name == source.Name), ct);
         if (map is null) { map = new Map { Game = game, Name = source.Name, ExternalId = source.ExternalId }; db.Maps.Add(map); }
         map.Name = source.Name; map.ExternalId = source.ExternalId;
         map.Config ??= new MapConfig { Map = map };
+        map.Config.Provider = source.Provider;
         map.Config.DefaultZoom = source.InitialZoom; map.Config.TilePattern = source.TilePattern;
-        map.Config.MinZoom = source.MinZoom; map.Config.MaxZoom = source.MaxZoom; map.Config.SpriteImagePath = source.SpriteImageLocation;
+        map.Config.MinZoom = source.MinZoom; map.Config.MaxZoom = source.MaxZoom;
+        map.Config.TileBoundsJson = source.TileBounds is null ? null : JsonSerializer.Serialize(source.TileBounds);
+        map.Config.SpriteImagePath = source.SpriteImageLocation;
         map.Config.MinLatitude = source.Locations.Count == 0 ? source.StartLatitude : source.Locations.Min(x => x.Latitude);
         map.Config.MaxLatitude = source.Locations.Count == 0 ? source.StartLatitude : source.Locations.Max(x => x.Latitude);
         map.Config.MinLongitude = source.Locations.Count == 0 ? source.StartLongitude : source.Locations.Min(x => x.Longitude);
@@ -87,10 +91,12 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
             foreach (var importedMedia in imported.Media)
             {
                 var media = location.Media.FirstOrDefault(x => x.ExternalId == importedMedia.ExternalId)
-                    ?? location.Media.FirstOrDefault(x => x.ExternalId is null && x.ContentHash == Hash(importedMedia.Url));
-                if (media is null) { media = new Media { ExternalId = importedMedia.ExternalId, ContentHash = Hash(importedMedia.Url), RelativePath = importedMedia.Url }; location.Media.Add(media); }
+                    ?? location.Media.FirstOrDefault(x => x.ExternalId is null && x.RelativePath == importedMedia.Source);
+                if (media is null) { media = new Media { ExternalId = importedMedia.ExternalId, ContentHash = Hash(importedMedia.Source), RelativePath = importedMedia.Source }; location.Media.Add(media); }
                 media.ExternalId = importedMedia.ExternalId;
-                media.Caption = importedMedia.Title; media.RelativePath = importedMedia.Url; media.ContentHash = Hash(importedMedia.Url); mediaCount++;
+                media.Caption = importedMedia.Title;
+                if (!File.Exists(media.RelativePath)) media.RelativePath = importedMedia.Source;
+                media.ContentHash = Hash(importedMedia.Source); mediaCount++;
             }
             completed++;
             if (completed % 100 == 0) { await db.SaveChangesAsync(ct); progress?.Report(new("Saving locations", completed, source.Locations.Count)); }
@@ -105,7 +111,7 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
         progress?.Report(new("Import complete", source.Locations.Count, source.Locations.Count));
-        return new(source.Groups.Count, categories.Count, source.Locations.Count, mediaCount, source.Name);
+        return new(source.Groups.Count, categories.Count, source.Locations.Count, mediaCount, source.Name, source.ExternalId);
     }
 
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));

@@ -1,0 +1,16 @@
+D:\MapCorleon\src\MapCorleon.MapGenie\bin\Debug\net8.0\MapCorleon.MapGenie.deps.json
+D:\MapCorleon\src\MapCorleon.MapGenie\bin\Debug\net8.0\MapCorleon.MapGenie.dll
+D:\MapCorleon\src\MapCorleon.MapGenie\bin\Debug\net8.0\MapCorleon.MapGenie.pdb
+D:\MapCorleon\src\MapCorleon.MapGenie\bin\Debug\net8.0\MapCorleon.Contracts.dll
+D:\MapCorleon\src\MapCorleon.MapGenie\bin\Debug\net8.0\MapCorleon.Contracts.pdb
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.csproj.AssemblyReference.cache
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.GeneratedMSBuildEditorConfig.editorconfig
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.AssemblyInfoInputs.cache
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.AssemblyInfo.cs
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.csproj.CoreCompileInputs.cache
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.sourcelink.json
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorle.0A1A5932.Up2Date
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.dll
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\refint\MapCorleon.MapGenie.dll
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.pdb
+D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\ref\MapCorleon.MapGenie.dll

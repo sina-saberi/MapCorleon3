@@ -4,25 +4,17 @@ namespace MapCorleon.Services;
 
 public interface IFilterService
 {
-    IEnumerable<Location> Apply(
-        IEnumerable<Location> source,
-        MarkFilter filter,
-        IReadOnlyDictionary<int, bool> visibility);
+    IEnumerable<Location> Apply(IEnumerable<Location> source, MarkFilter filter, IReadOnlyDictionary<int, bool> visibility);
 }
 
 public sealed class FilterService : IFilterService
 {
-    public IEnumerable<Location> Apply(
-        IEnumerable<Location> source,
-        MarkFilter filter,
-        IReadOnlyDictionary<int, bool> visibility)
+    public IEnumerable<Location> Apply(IEnumerable<Location> source, MarkFilter filter, IReadOnlyDictionary<int, bool> visibility)
     {
-        return source.Where(location =>
-            IsCategoryVisible(location, visibility) && MatchesMarkFilter(location, filter));
+        return source.Where(location => IsCategoryVisible(location, visibility) && MatchesMarkFilter(location, filter));
     }
 
-    private static bool IsCategoryVisible(Location location, IReadOnlyDictionary<int, bool> visibility)
-        => !visibility.TryGetValue(location.CategoryId, out var visible) || visible;
+    private static bool IsCategoryVisible(Location location, IReadOnlyDictionary<int, bool> visibility) => !visibility.TryGetValue(location.CategoryId, out var visible) || visible;
 
     private static bool MatchesMarkFilter(Location location, MarkFilter filter) => filter switch
     {
@@ -41,8 +33,7 @@ public sealed class SearchService : ISearchService
 {
     public IEnumerable<Location> Search(IEnumerable<Location> source, string? query)
     {
-        if (string.IsNullOrWhiteSpace(query))
-            return source;
+        if (string.IsNullOrWhiteSpace(query)) return source;
 
         return source.Where(location =>
             location.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||

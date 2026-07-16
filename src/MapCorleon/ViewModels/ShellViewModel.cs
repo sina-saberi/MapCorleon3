@@ -28,13 +28,7 @@ public sealed class ShellViewModel : ViewModelBase
     private Map? currentMap;
     private Timeline? selectedTimeline;
 
-    public ShellViewModel(
-        AppDbContext db,
-        ILocationService locationService,
-        IFilterService filterService,
-        ISearchService searchService,
-        IEventBus eventBus,
-        ISettingsService settingsService)
+    public ShellViewModel(AppDbContext db, ILocationService locationService, IFilterService filterService, ISearchService searchService, IEventBus eventBus, ISettingsService settingsService)
     {
         this.db = db;
         this.locationService = locationService;
@@ -89,15 +83,11 @@ public sealed class ShellViewModel : ViewModelBase
         get => query;
         set
         {
-            if (!Set(ref query, value))
-                return;
-
+            if (!Set(ref query, value)) return;
             OnPropertyChanged(nameof(IsSearchActive));
             searchTimer.Stop();
-            if (IsSearchActive)
-                searchTimer.Start();
-            else
-                RefreshLocations();
+            if (IsSearchActive) searchTimer.Start();
+            else RefreshLocations();
         }
     }
 
@@ -131,8 +121,7 @@ public sealed class ShellViewModel : ViewModelBase
         get => selectedTimeline;
         set
         {
-            if (Set(ref selectedTimeline, value) && value is not null)
-                _ = PersistSelectionAsync();
+            if (Set(ref selectedTimeline, value) && value is not null) PersistSelectionAsync();
         }
     }
 
@@ -141,9 +130,7 @@ public sealed class ShellViewModel : ViewModelBase
         get => selectedLocation;
         set
         {
-            if (!Set(ref selectedLocation, value))
-                return;
-
+            if (!Set(ref selectedLocation, value)) return;
             eventBus.Select(value);
             ((AsyncCommand)ToggleMarkCommand).RaiseCanExecuteChanged();
             OnPropertyChanged(nameof(MarkActionText));
@@ -155,10 +142,8 @@ public sealed class ShellViewModel : ViewModelBase
         get => markFilter;
         set
         {
-            if (!Set(ref markFilter, value))
-                return;
-
-            _ = PersistFilterAsync();
+            if (!Set(ref markFilter, value)) return;
+            PersistFilterAsync();
             RefreshLocations();
         }
     }
@@ -175,8 +160,7 @@ public sealed class ShellViewModel : ViewModelBase
                 .ToListAsync();
 
             ReplaceCollection(Maps, maps);
-            if (maps.Count == 0)
-                return;
+            if (maps.Count == 0) return;
 
             var wantedMap = preferredMapName ?? settingsService.Current.CurrentMapName;
             var map = maps.FirstOrDefault(item => item.Name == wantedMap) ?? maps[0];
@@ -202,25 +186,19 @@ public sealed class ShellViewModel : ViewModelBase
 
     public async Task ChangeTimelineAsync(int timelineId)
     {
-        if (CurrentMap is null)
-            return;
-
+        if (CurrentMap is null) return;
         SelectedTimeline = Timelines.FirstOrDefault(timeline => timeline.Id == timelineId);
-        if (SelectedTimeline is null)
-            return;
-
+        if (SelectedTimeline is null) return;
         allLocations = await locationService.LoadAsync(CurrentMap.Id, SelectedTimeline.Id);
         SelectedLocation = null;
         RefreshLocations();
     }
 
-    public void SelectLocationById(int id)
-        => SelectedLocation = allLocations.FirstOrDefault(location => location.Id == id);
+    public void SelectLocationById(int id) => SelectedLocation = allLocations.FirstOrDefault(location => location.Id == id);
 
     public void FocusSelectedLocation()
     {
-        if (SelectedLocation is not null)
-            OnPropertyChanged(nameof(SelectedLocation));
+        if (SelectedLocation is not null) OnPropertyChanged(nameof(SelectedLocation));
     }
 
     private async Task LoadGroupsAsync(int mapId)
@@ -257,9 +235,7 @@ public sealed class ShellViewModel : ViewModelBase
 
     private async Task ToggleMarkAsync()
     {
-        if (SelectedLocation is null || SelectedTimeline is null || CurrentMap is null)
-            return;
-
+        if (SelectedLocation is null || SelectedTimeline is null || CurrentMap is null) return;
         var selectedId = SelectedLocation.Id;
         await locationService.ToggleMarkedAsync(selectedId, SelectedTimeline.Id);
         allLocations = await locationService.LoadAsync(CurrentMap.Id, SelectedTimeline.Id);
@@ -269,10 +245,7 @@ public sealed class ShellViewModel : ViewModelBase
 
     private void RefreshLocations()
     {
-        var filtered = filterService.Apply(
-            allLocations,
-            MarkFilter,
-            settingsService.Current.CategoryVisibility);
+        var filtered = filterService.Apply(allLocations, MarkFilter, settingsService.Current.CategoryVisibility);
         var visible = searchService.Search(filtered, Query).ToList();
 
         ReplaceCollection(VisibleLocations, visible);
@@ -291,7 +264,7 @@ public sealed class ShellViewModel : ViewModelBase
             [category.Id] = visible
         };
 
-        _ = settingsService.SaveAsync(settingsService.Current with { CategoryVisibility = values });
+        settingsService.SaveAsync(settingsService.Current with { CategoryVisibility = values });
         RefreshLocations();
     }
 
@@ -306,26 +279,23 @@ public sealed class ShellViewModel : ViewModelBase
             values[category.Id] = visible;
         }
 
-        _ = settingsService.SaveAsync(settingsService.Current with { CategoryVisibility = values });
+        settingsService.SaveAsync(settingsService.Current with { CategoryVisibility = values });
         ReplaceCollection(Groups, Groups.ToList());
         RefreshLocations();
     }
 
-    private Task PersistFilterAsync()
-        => settingsService.SaveAsync(settingsService.Current with { Filter = MarkFilter });
+    private Task PersistFilterAsync() => settingsService.SaveAsync(settingsService.Current with { Filter = MarkFilter });
 
-    private Task PersistSelectionAsync()
-        => settingsService.SaveAsync(settingsService.Current with
-        {
-            CurrentMapName = currentMapName,
-            CurrentTimelineId = selectedTimeline?.Id
-        });
+    private Task PersistSelectionAsync() => settingsService.SaveAsync(settingsService.Current with
+    {
+        CurrentMapName = currentMapName,
+        CurrentTimelineId = selectedTimeline?.Id
+    });
 
     private static void ReplaceCollection<T>(ObservableCollection<T> target, IEnumerable<T> values)
     {
         var snapshot = values.ToList();
         target.Clear();
-        foreach (var value in snapshot)
-            target.Add(value);
+        foreach (var value in snapshot) target.Add(value);
     }
 }

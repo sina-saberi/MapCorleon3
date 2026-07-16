@@ -4,7 +4,8 @@
     <UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MapCorleon.Import\MapCorleon.Import.csproj" />
+    <ProjectReference Include="..\MapCorleon.Contracts\MapCorleon.Contracts.csproj" />
+    <ProjectReference Include="..\MapCorleon.MapGenie\MapCorleon.MapGenie.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.17" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Mapsui.Wpf" Version="5.0.2" />

@@ -61,6 +61,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS "IX_Marked_Locations_TimelineId_LocationId" ON
             ("Categories", "IconPixelRatio", "REAL NULL"), ("Locations", "ExternalId", "INTEGER NULL"),
             ("Locations", "TimelineId", "INTEGER NULL"),
             ("Media", "ExternalId", "INTEGER NULL"), ("Map Config", "TilePattern", "TEXT NULL"),
+            ("Map Config", "Provider", "TEXT NOT NULL DEFAULT 'mapgenie'"),
+            ("Map Config", "TileBoundsJson", "TEXT NULL"),
             ("Map Config", "MinZoom", "INTEGER NULL"), ("Map Config", "MaxZoom", "INTEGER NULL"),
             ("Map Config", "SpriteImagePath", "TEXT NULL")
         };

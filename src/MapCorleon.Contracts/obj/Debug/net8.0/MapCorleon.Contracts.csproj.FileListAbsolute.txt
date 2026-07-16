@@ -1,0 +1,12 @@
+D:\MapCorleon\src\MapCorleon.Contracts\bin\Debug\net8.0\MapCorleon.Contracts.deps.json
+D:\MapCorleon\src\MapCorleon.Contracts\bin\Debug\net8.0\MapCorleon.Contracts.dll
+D:\MapCorleon\src\MapCorleon.Contracts\bin\Debug\net8.0\MapCorleon.Contracts.pdb
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\MapCorleon.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\MapCorleon.Contracts.AssemblyInfoInputs.cache
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\MapCorleon.Contracts.AssemblyInfo.cs
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\MapCorleon.Contracts.csproj.CoreCompileInputs.cache
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\MapCorleon.Contracts.sourcelink.json
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\MapCorleon.Contracts.dll
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\refint\MapCorleon.Contracts.dll
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\MapCorleon.Contracts.pdb
+D:\MapCorleon\src\MapCorleon.Contracts\obj\Debug\net8.0\ref\MapCorleon.Contracts.dll
