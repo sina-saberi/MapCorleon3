@@ -7,6 +7,7 @@ public sealed class Media : IEntity
     public long? ExternalId { get; set; }
     public required string ContentHash { get; set; }
     public required string RelativePath { get; set; }
+    public string? SourceUrl { get; set; }
     public string? Caption { get; set; }
 
     public Location? Location { get; set; }

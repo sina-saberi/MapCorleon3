@@ -5,6 +5,7 @@ public sealed class DownloadTask : IEntity
     public int Id { get; set; }
     public int MapId { get; set; }
     public required string Provider { get; set; }
+    public string? SourcePageUrl { get; set; }
     public bool DownloadMedia { get; set; }
     public bool DownloadTiles { get; set; }
     public required string Status { get; set; }

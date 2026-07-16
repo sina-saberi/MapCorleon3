@@ -20,7 +20,8 @@ public sealed record ImportedMedia(long ExternalId, string? Title, string Source
 
 public interface IProviderStorage
 {
-    Task<StoredAsset> CacheAsync(string provider, string kind, string source, string? preferredFileName = null, CancellationToken ct = default);
+    Task<StoredAsset> CacheAsync(string provider, string kind, string source, string? preferredFileName = null,
+        CancellationToken ct = default, string? referrer = null);
 }
 public sealed record StoredAsset(string FullPath, string ContentHash);
 

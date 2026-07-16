@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Diagnostics;
 using MapCorleon.Contracts;
 using MapCorleon.Data;
 using MapCorleon.Models;
@@ -23,14 +24,15 @@ public interface IImportTaskService : INotifyPropertyChanged
     event EventHandler? TasksChanged;
     Task InitializeAsync();
     Task<IReadOnlyList<DownloadTask>> GetTasksAsync();
-    bool TryStart(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles);
+    bool TryStart(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl = null);
     Task PauseAsync(int taskId);
     Task ResumeAsync(int taskId);
+    Task CancelAsync(int taskId);
 }
 
 public sealed class ImportTaskService(
     IDbContextFactory<AppDbContext> factory,
-    IProviderStorage storage,
+    IMediaDownloadService mediaDownloads,
     ISettingsService settings,
     IMapProviderResolver providers) : IImportTaskService
 {
@@ -43,6 +45,7 @@ public sealed class ImportTaskService(
     private string status = string.Empty;
     private string? error;
     private int percentage;
+    private DateTime lastProgressPersistUtc = DateTime.MinValue;
 
     public bool IsRunning { get => isRunning; private set { if (Set(ref isRunning, value)) OnPropertyChanged(nameof(CanPause)); } }
     public bool CanPause => IsRunning && activeTaskId is not null;
@@ -76,31 +79,67 @@ public sealed class ImportTaskService(
             .OrderByDescending(x => x.UpdatedAtUtc).ToListAsync();
     }
 
-    public bool TryStart(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles)
+    public bool TryStart(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl = null)
     {
         if (!downloadMedia && !downloadTiles) return false;
         Status = "Creating offline download task";
-        _ = CreateAndSwitchAsync(provider, result, downloadMedia, downloadTiles);
+        _ = CreateAndSwitchAsync(provider, result, downloadMedia, downloadTiles, sourcePageUrl);
         return true;
     }
 
-    public async Task PauseAsync(int taskId)
+    public Task PauseAsync(int taskId)
     {
-        Task? operation = null;
+        if (activeTaskId == taskId && runningOperation is { IsCompleted: false })
+        {
+            Status = "Pausing download…";
+            cancellation?.Cancel();
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task ResumeAsync(int taskId)
+    {
+        Status = "Switching download task…";
+        _ = SwitchToTaskAsync(taskId);
+        return Task.CompletedTask;
+    }
+
+    public Task CancelAsync(int taskId)
+    {
+        if (activeTaskId == taskId) Status = "Cancelling download task…";
+        _ = CancelAndDeleteAsync(taskId);
+        return Task.CompletedTask;
+    }
+
+    private async Task CancelAndDeleteAsync(int taskId)
+    {
         await switchLock.WaitAsync();
         try
         {
-            if (activeTaskId == taskId && runningOperation is { IsCompleted: false })
+            if (activeTaskId == taskId && runningOperation is { IsCompleted: false } operation)
             {
                 cancellation?.Cancel();
-                operation = runningOperation;
+                await operation.ConfigureAwait(false);
             }
+            await using var db = await factory.CreateDbContextAsync().ConfigureAwait(false);
+            var task = await db.DownloadTasks.FindAsync(taskId).ConfigureAwait(false);
+            if (task is not null)
+            {
+                db.DownloadTasks.Remove(task);
+                await db.SaveChangesAsync().ConfigureAwait(false);
+            }
+            RaiseTasksChanged();
+            if (!IsRunning) { Status = string.Empty; Percentage = 0; Error = null; }
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            Status = $"Could not remove download task: {ex.Message}";
         }
         finally { switchLock.Release(); }
-        if (operation is not null) await operation;
     }
 
-    public async Task ResumeAsync(int taskId)
+    private async Task SwitchToTaskAsync(int taskId)
     {
         await switchLock.WaitAsync();
         try
@@ -122,10 +161,15 @@ public sealed class ImportTaskService(
             }
             StartOperation(provider, task.Id);
         }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            Status = $"Could not start download task: {ex.Message}";
+        }
         finally { switchLock.Release(); }
     }
 
-    private async Task CreateAndSwitchAsync(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles)
+    private async Task CreateAndSwitchAsync(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl)
     {
         await switchLock.WaitAsync();
         try
@@ -135,7 +179,8 @@ public sealed class ImportTaskService(
             var map = await db.Maps.FirstAsync(x => x.ExternalId == result.MapExternalId);
             var task = new DownloadTask
             {
-                MapId = map.Id, Provider = provider.Key, DownloadMedia = downloadMedia, DownloadTiles = downloadTiles,
+                MapId = map.Id, Provider = provider.Key, SourcePageUrl = sourcePageUrl,
+                DownloadMedia = downloadMedia, DownloadTiles = downloadTiles,
                 Status = Pending, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow
             };
             db.DownloadTasks.Add(task);
@@ -161,14 +206,18 @@ public sealed class ImportTaskService(
     private void StartOperation(IMapProvider provider, int taskId)
     {
         activeTaskId = taskId;
-        cancellation = new CancellationTokenSource();
-        runningOperation = RunAsync(provider, taskId, cancellation.Token);
+        var workerCancellation = new CancellationTokenSource();
+        cancellation = workerCancellation;
+        // The plan can contain hundreds of thousands of tiles. Always build and
+        // execute it away from WPF's dispatcher thread.
+        runningOperation = Task.Run(() => RunAsync(provider, taskId, workerCancellation.Token));
     }
 
     private async Task RunAsync(IMapProvider provider, int taskId, CancellationToken ct)
     {
         IsRunning = true;
         Error = null;
+        var mediaChanged = false;
         try
         {
             await UpdateTaskAsync(taskId, Running, null, ct: CancellationToken.None);
@@ -182,42 +231,59 @@ public sealed class ImportTaskService(
             foreach (var media in plan.Media)
             {
                 ct.ThrowIfCancellationRequested();
+                Trace.WriteLine($"[MapCorleon DownloadTask #{taskId}] Media URL: {media.RelativePath}");
+                using var itemCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                itemCancellation.CancelAfter(TimeSpan.FromSeconds(30));
                 try
                 {
-                    var asset = await storage.CacheAsync(task.Provider, plan.MediaStorageKind, media.RelativePath,
-                        Path.GetFileName(new Uri(media.RelativePath).AbsolutePath), ct);
-                    await using var updateDb = await factory.CreateDbContextAsync(ct);
-                    var item = await updateDb.Media.FindAsync([media.Id], ct);
-                    if (item is not null)
-                    {
-                        item.RelativePath = asset.FullPath;
-                        item.ContentHash = asset.ContentHash;
-                        await updateDb.SaveChangesAsync(ct);
-                    }
+                    await mediaDownloads.EnsureDownloadedAsync(media.Id, task.Provider, plan.MediaStorageKind, task.SourcePageUrl, itemCancellation.Token)
+                        .WaitAsync(itemCancellation.Token);
                     completed++;
-                    MediaDownloaded?.Invoke(this, EventArgs.Empty);
+                    mediaChanged = true;
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    failed++;
+                    Error = $"Media download timed out after 30 seconds: {media.SourceUrl ?? media.RelativePath}";
                 }
                 catch (OperationCanceledException) { throw; }
-                catch (Exception ex) { failed++; Error = $"Media download failed: {ex.Message}"; }
+                catch (Exception ex)
+                {
+                    failed++;
+                    Error = $"Media download failed for {media.RelativePath}: {ex.Message}. HTTP details: {Path.Combine(settings.Current.DataDirectory, "download-http.log")}";
+                }
                 await UpdateProgressAsync(taskId, completed, plan.Total, failed,
-                    $"Downloading media: {completed} complete, {failed} failed, {plan.Total} total", ct);
+                    $"Downloading media: {completed} complete, {failed} failed, {plan.Total} total", ct,
+                    force: false);
             }
 
             foreach (var tile in plan.Tiles)
             {
                 ct.ThrowIfCancellationRequested();
+                Trace.WriteLine($"[MapCorleon DownloadTask #{taskId}] Tile GET {tile.Url}");
+                using var itemCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                itemCancellation.CancelAfter(TimeSpan.FromSeconds(30));
                 try
                 {
-                    var bytes = await provider.DownloadTileAsync(tile.Url, ct);
+                    var bytes = await provider.DownloadTileAsync(tile.Url, itemCancellation.Token)
+                        .WaitAsync(itemCancellation.Token);
+                    itemCancellation.Token.ThrowIfCancellationRequested();
                     if (bytes is null) throw new HttpRequestException("The server returned no tile data.");
                     Directory.CreateDirectory(Path.GetDirectoryName(tile.Path)!);
                     await File.WriteAllBytesAsync(tile.Path, bytes, ct);
+                    Trace.WriteLine($"[MapCorleon DownloadTask #{taskId}] Tile saved {tile.Path}");
                     completed++;
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    failed++;
+                    Error = $"Tile download timed out after 30 seconds: {tile.Url}";
                 }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex) { failed++; Error = $"Tile download failed: {ex.Message}"; }
                 await UpdateProgressAsync(taskId, completed, plan.Total, failed,
-                    $"Downloading tiles: {completed} complete, {failed} failed, {plan.Total} total", ct);
+                    $"Downloading tiles: {completed} complete, {failed} failed, {plan.Total} total", ct,
+                    force: false);
             }
 
             if (failed > 0)
@@ -235,6 +301,9 @@ public sealed class ImportTaskService(
         }
         finally
         {
+            // Reloading the full location/media graph after every image blocks
+            // WPF's dispatcher. Refresh once when this run yields instead.
+            if (mediaChanged) MediaDownloaded?.Invoke(this, EventArgs.Empty);
             if (activeTaskId == taskId)
             {
                 activeTaskId = null;
@@ -252,9 +321,9 @@ public sealed class ImportTaskService(
     {
         var map = await db.Maps.AsNoTracking().FirstAsync(x => x.Id == task.MapId, ct);
         var allMedia = task.DownloadMedia
-            ? await db.Media.AsNoTracking().Where(x => x.Location!.Category!.Group!.MapId == task.MapId).ToListAsync(ct)
+            ? await db.Media.AsNoTracking().Where(x => x.Location!.Category!.Group!.MapId == task.MapId && x.ExternalId != null).ToListAsync(ct)
             : [];
-        var media = allMedia.Where(x => IsRemote(x.RelativePath)).ToList();
+        var media = allMedia.Where(x => IsRemote(x.RelativePath) || !File.Exists(x.RelativePath)).ToList();
         var alreadyComplete = allMedia.Count(x => !IsRemote(x.RelativePath) && File.Exists(x.RelativePath));
         var total = media.Count + alreadyComplete;
         var tiles = new List<TileWork>();
@@ -284,8 +353,13 @@ public sealed class ImportTaskService(
         return new(media, tiles, alreadyComplete, total, Path.Combine("media", $"game-{map.GameId}", $"map-{map.Id}"));
     }
 
-    private async Task UpdateProgressAsync(int id, int completed, int total, int failed, string text, CancellationToken ct)
+    private async Task UpdateProgressAsync(int id, int completed, int total, int failed, string text, CancellationToken ct, bool force = true)
     {
+        Status = text;
+        Percentage = total == 0 ? 100 : (int)Math.Round(completed * 100d / total);
+        var now = DateTime.UtcNow;
+        if (!force && now - lastProgressPersistUtc < TimeSpan.FromSeconds(1)) return;
+        lastProgressPersistUtc = now;
         await using var db = await factory.CreateDbContextAsync(ct);
         var task = await db.DownloadTasks.FindAsync([id], ct);
         if (task is null) return;
@@ -295,8 +369,6 @@ public sealed class ImportTaskService(
         task.Error = Error;
         task.UpdatedAtUtc = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
-        Status = text;
-        Percentage = total == 0 ? 100 : (int)Math.Round(completed * 100d / total);
         RaiseTasksChanged();
     }
 

@@ -95,6 +95,7 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
                 if (media is null) { media = new Media { ExternalId = importedMedia.ExternalId, ContentHash = Hash(importedMedia.Source), RelativePath = importedMedia.Source }; location.Media.Add(media); }
                 media.ExternalId = importedMedia.ExternalId;
                 media.Caption = importedMedia.Title;
+                media.SourceUrl = importedMedia.Source;
                 if (!File.Exists(media.RelativePath)) media.RelativePath = importedMedia.Source;
                 media.ContentHash = Hash(importedMedia.Source); mediaCount++;
             }

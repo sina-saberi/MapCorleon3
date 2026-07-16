@@ -66,10 +66,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS "IX_Marked_Locations_TimelineId_LocationId" ON
             ("Categories", "IconPixelRatio", "REAL NULL"), ("Locations", "ExternalId", "INTEGER NULL"),
             ("Locations", "TimelineId", "INTEGER NULL"),
             ("Media", "ExternalId", "INTEGER NULL"), ("Map Config", "TilePattern", "TEXT NULL"),
+            ("Media", "SourceUrl", "TEXT NULL"),
             ("Map Config", "Provider", "TEXT NOT NULL DEFAULT 'mapgenie'"),
             ("Map Config", "TileBoundsJson", "TEXT NULL"),
             ("Map Config", "MinZoom", "INTEGER NULL"), ("Map Config", "MaxZoom", "INTEGER NULL"),
             ("Map Config", "SpriteImagePath", "TEXT NULL")
+            ,("Download Tasks", "SourcePageUrl", "TEXT NULL")
         };
         foreach (var column in columns)
         {
@@ -89,6 +91,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS "IX_Groups_MapId_ExternalId" ON "Groups" ("Map
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_Categories_GroupId_ExternalId" ON "Categories" ("GroupId", "ExternalId");
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_Locations_CategoryId_ExternalId" ON "Locations" ("CategoryId", "ExternalId");
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_Media_LocationId_ExternalId" ON "Media" ("LocationId", "ExternalId");
+UPDATE "Media" SET "SourceUrl"="RelativePath" WHERE "SourceUrl" IS NULL AND ("RelativePath" LIKE 'http://%' OR "RelativePath" LIKE 'https://%');
 """, ct);
     }
 
@@ -101,11 +104,11 @@ CREATE TABLE IF NOT EXISTS "Map Config" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Ma
 CREATE TABLE IF NOT EXISTS "Groups" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Groups" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "Name" TEXT NOT NULL, "IsVisible" INTEGER NOT NULL DEFAULT 1, CONSTRAINT "FK_Groups_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS "Categories" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Categories" PRIMARY KEY AUTOINCREMENT, "GroupId" INTEGER NOT NULL, "Name" TEXT NOT NULL, "IsVisible" INTEGER NOT NULL DEFAULT 1, CONSTRAINT "FK_Categories_Groups_GroupId" FOREIGN KEY ("GroupId") REFERENCES "Groups" ("Id") ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS "Locations" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Locations" PRIMARY KEY AUTOINCREMENT, "CategoryId" INTEGER NOT NULL, "TimelineId" INTEGER NULL, "Title" TEXT NOT NULL, "DescriptionMarkdown" TEXT NOT NULL DEFAULT '', "Latitude" REAL NOT NULL, "Longitude" REAL NOT NULL, "IsCustom" INTEGER NOT NULL DEFAULT 0, CONSTRAINT "FK_Locations_Categories_CategoryId" FOREIGN KEY ("CategoryId") REFERENCES "Categories" ("Id") ON DELETE CASCADE, CONSTRAINT "FK_Locations_Timelines_TimelineId" FOREIGN KEY ("TimelineId") REFERENCES "Timelines" ("Id") ON DELETE CASCADE);
-CREATE TABLE IF NOT EXISTS "Media" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Media" PRIMARY KEY AUTOINCREMENT, "LocationId" INTEGER NOT NULL, "ContentHash" TEXT NOT NULL, "RelativePath" TEXT NOT NULL, "Caption" TEXT NULL, CONSTRAINT "FK_Media_Locations_LocationId" FOREIGN KEY ("LocationId") REFERENCES "Locations" ("Id") ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS "Media" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Media" PRIMARY KEY AUTOINCREMENT, "LocationId" INTEGER NOT NULL, "ContentHash" TEXT NOT NULL, "RelativePath" TEXT NOT NULL, "SourceUrl" TEXT NULL, "Caption" TEXT NULL, CONSTRAINT "FK_Media_Locations_LocationId" FOREIGN KEY ("LocationId") REFERENCES "Locations" ("Id") ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS "Timelines" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Timelines" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "Name" TEXT NOT NULL, "SortOrder" INTEGER NOT NULL, CONSTRAINT "FK_Timelines_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS "Pins" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Pins" PRIMARY KEY AUTOINCREMENT, "TimelineId" INTEGER NOT NULL, "LocationId" INTEGER NULL, "Latitude" REAL NOT NULL, "Longitude" REAL NOT NULL, "Title" TEXT NULL, CONSTRAINT "FK_Pins_Timelines_TimelineId" FOREIGN KEY ("TimelineId") REFERENCES "Timelines" ("Id") ON DELETE CASCADE, CONSTRAINT "FK_Pins_Locations_LocationId" FOREIGN KEY ("LocationId") REFERENCES "Locations" ("Id"));
 CREATE TABLE IF NOT EXISTS "Marked Locations" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Marked_Locations" PRIMARY KEY AUTOINCREMENT, "LocationId" INTEGER NOT NULL, "TimelineId" INTEGER NOT NULL, "MarkedAtUtc" TEXT NOT NULL, CONSTRAINT "FK_Marked_Locations_Locations_LocationId" FOREIGN KEY ("LocationId") REFERENCES "Locations" ("Id") ON DELETE CASCADE, CONSTRAINT "FK_Marked_Locations_Timelines_TimelineId" FOREIGN KEY ("TimelineId") REFERENCES "Timelines" ("Id") ON DELETE CASCADE);
-CREATE TABLE IF NOT EXISTS "Download Tasks" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Download_Tasks" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "Provider" TEXT NOT NULL, "DownloadMedia" INTEGER NOT NULL, "DownloadTiles" INTEGER NOT NULL, "Status" TEXT NOT NULL, "CompletedItems" INTEGER NOT NULL, "TotalItems" INTEGER NOT NULL, "FailedItems" INTEGER NOT NULL, "Error" TEXT NULL, "CreatedAtUtc" TEXT NOT NULL, "UpdatedAtUtc" TEXT NOT NULL, CONSTRAINT "FK_Download_Tasks_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS "Download Tasks" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Download_Tasks" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "Provider" TEXT NOT NULL, "SourcePageUrl" TEXT NULL, "DownloadMedia" INTEGER NOT NULL, "DownloadTiles" INTEGER NOT NULL, "Status" TEXT NOT NULL, "CompletedItems" INTEGER NOT NULL, "TotalItems" INTEGER NOT NULL, "FailedItems" INTEGER NOT NULL, "Error" TEXT NULL, "CreatedAtUtc" TEXT NOT NULL, "UpdatedAtUtc" TEXT NOT NULL, CONSTRAINT "FK_Download_Tasks_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_Map_Config_MapId" ON "Map Config" ("MapId");
 CREATE INDEX IF NOT EXISTS "IX_Maps_GameId" ON "Maps" ("GameId");
 CREATE INDEX IF NOT EXISTS "IX_Groups_MapId" ON "Groups" ("MapId");

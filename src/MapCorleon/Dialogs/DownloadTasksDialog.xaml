@@ -5,7 +5,10 @@
         WindowStartupLocation="CenterOwner" Loaded="Window_Loaded" Closed="Window_Closed">
   <DockPanel Margin="16">
     <DockPanel DockPanel.Dock="Top" Margin="3,0,3,12">
-      <Button DockPanel.Dock="Right" Content="Refresh" Click="Refresh_Click"/>
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+        <Button Content="Open HTTP log" Click="OpenLog_Click"/>
+        <Button Content="Refresh" Click="Refresh_Click"/>
+      </StackPanel>
       <StackPanel>
         <TextBlock Text="DOWNLOAD TASKS" Foreground="{StaticResource MutedTextBrush}" FontSize="11"/>
         <TextBlock Text="Only one task runs at a time. Starting another task automatically pauses the active task."
@@ -43,8 +46,12 @@
                   <Run Text="{Binding DownloadKinds, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Status, Mode=OneWay}"/>
                 </TextBlock>
               </StackPanel>
-              <Button Grid.Column="1" Content="{Binding ActionText, Mode=OneWay}" IsEnabled="{Binding CanAct, Mode=OneWay}"
-                      Tag="{Binding Id, Mode=OneWay}" Click="TaskAction_Click" MinWidth="88" VerticalAlignment="Top"/>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                <Button Content="{Binding ActionText, Mode=OneWay}" IsEnabled="{Binding CanAct, Mode=OneWay}"
+                        Tag="{Binding Id, Mode=OneWay}" Click="TaskAction_Click" MinWidth="88"/>
+                <Button Content="Cancel &amp; remove" Tag="{Binding Id, Mode=OneWay}"
+                        Click="CancelTask_Click" Background="#6B2630"/>
+              </StackPanel>
               <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Minimum="0" Maximum="100"
                            Value="{Binding Percentage, Mode=OneWay}" Height="7" Margin="0,13,0,7"/>
               <DockPanel Grid.Row="2" Grid.ColumnSpan="2">

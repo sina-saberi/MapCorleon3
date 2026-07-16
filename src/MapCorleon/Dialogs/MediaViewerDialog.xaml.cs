@@ -11,7 +11,18 @@ public partial class MediaViewerDialog : Window
     private readonly IReadOnlyList<Media> media;
     public MediaViewerDialog(IReadOnlyList<Media> media, int index) { this.media = media; InitializeComponent(); Filmstrip.ItemsSource = media; Filmstrip.SelectedIndex = Math.Clamp(index, 0, Math.Max(0, media.Count - 1)); }
     private Media? Current => Filmstrip.SelectedItem as Media;
-    private void ShowCurrent() { if (Current is not { } item) return; MainImage.Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(item.RelativePath, UriKind.RelativeOrAbsolute)); CaptionText.Text = item.Caption ?? "Image"; PositionText.Text = $"{Filmstrip.SelectedIndex + 1} of {media.Count}"; }
+    private void ShowCurrent()
+    {
+        MainImage.Source = null;
+        if (Current is not { } item) return;
+        if (File.Exists(item.RelativePath) || Uri.TryCreate(item.RelativePath, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
+        {
+            try { MainImage.Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(item.RelativePath, UriKind.RelativeOrAbsolute)); }
+            catch (IOException) { MainImage.Source = null; }
+        }
+        CaptionText.Text = item.Caption ?? "Image";
+        PositionText.Text = $"{Filmstrip.SelectedIndex + 1} of {media.Count}";
+    }
     private void Filmstrip_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) => ShowCurrent();
     private void Previous() { if (media.Count > 0) Filmstrip.SelectedIndex = (Filmstrip.SelectedIndex - 1 + media.Count) % media.Count; }
     private void Next() { if (media.Count > 0) Filmstrip.SelectedIndex = (Filmstrip.SelectedIndex + 1) % media.Count; }

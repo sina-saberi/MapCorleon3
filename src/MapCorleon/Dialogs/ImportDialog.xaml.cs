@@ -37,7 +37,7 @@ public partial class ImportDialog : Window
             var request = new MapImportRequest(provider.Key, uri.ToString(), DownloadMedia.IsChecked == true, DownloadTiles.IsChecked == true);
             var result = await provider.ImportAsync(request, progress, cancellation.Token);
             await App.Services.GetRequiredService<ShellViewModel>().LoadAsync(result.MapName);
-            tasks.TryStart(provider, result, request.DownloadMedia, request.DownloadTiles);
+            tasks.TryStart(provider, result, request.DownloadMedia, request.DownloadTiles, request.PageUrl);
             MessageBox.Show(this, $"Imported {result.MapName}: {result.Groups} groups, {result.Categories} categories, {result.Locations} locations and {result.Media} media records.", "Import complete");
             DialogResult = true;
         }

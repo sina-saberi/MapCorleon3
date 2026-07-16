@@ -6,6 +6,8 @@ using System.Windows.Media;
 using MapCorleon.Dialogs;
 using MapCorleon.Models;
 using MapCorleon.ViewModels;
+using MapCorleon.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MapCorleon.Views;
 
@@ -13,6 +15,7 @@ public partial class RightSidebarView : UserControl
 {
     private static readonly Regex Links = new(@"\[(?<label>[^\]]+)\]\((?<url>[^)]+)\)|\[(?<bracket>https?://[^\]]+|mapcorleon://[^\]]+)\]|(?<bare>https?://\S+|mapcorleon://\S+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private Media? selectedMedia;
+    private CancellationTokenSource? previewCancellation;
 
     public RightSidebarView()
     {
@@ -38,7 +41,7 @@ public partial class RightSidebarView : UserControl
     {
         RenderDescription(location?.DescriptionMarkdown ?? string.Empty);
         ThumbnailList.SelectedIndex = location?.Media.Count > 0 ? 0 : -1;
-        UpdateHero();
+        _ = UpdateHeroAsync();
     }
 
     private void RenderDescription(string markdown)
@@ -67,16 +70,42 @@ public partial class RightSidebarView : UserControl
         else if (!string.IsNullOrWhiteSpace(url)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
     }
 
-    private void Thumbnail_SelectionChanged(object sender, SelectionChangedEventArgs e) { selectedMedia = ThumbnailList.SelectedItem as Media; UpdateHero(); }
-    private void UpdateHero()
+    private void Thumbnail_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        HeroImage.Source = selectedMedia is null ? null : new System.Windows.Media.Imaging.BitmapImage(new Uri(selectedMedia.RelativePath, UriKind.RelativeOrAbsolute));
-        HeroCaption.Text = selectedMedia?.Caption ?? "Image";
+        selectedMedia = ThumbnailList.SelectedItem as Media;
+        _ = UpdateHeroAsync();
+    }
+    private async Task UpdateHeroAsync()
+    {
+        previewCancellation?.Cancel();
+        previewCancellation?.Dispose();
+        previewCancellation = new CancellationTokenSource();
+        var ct = previewCancellation.Token;
+        var requested = selectedMedia;
+        HeroImage.Source = null;
+        if (requested is not null)
+        {
+            try
+            {
+                requested.RelativePath = await App.Services.GetRequiredService<IMediaDownloadService>()
+                    .EnsureDownloadedAsync(requested.Id, ct);
+                if (requested == selectedMedia && System.IO.File.Exists(requested.RelativePath))
+                    HeroImage.Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(requested.RelativePath, UriKind.Absolute));
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                if (requested == selectedMedia)
+                    HeroCaption.Text = $"Image unavailable: {ex.Message}";
+            }
+        }
+        if (requested == selectedMedia && HeroImage.Source is not null)
+            HeroCaption.Text = selectedMedia?.Caption ?? "Image";
         var total = ThumbnailList.Items.Count; MediaCountText.Text = total == 0 ? "" : $"{ThumbnailList.SelectedIndex + 1} / {total}";
     }
     private void Hero_Click(object sender, RoutedEventArgs e)
     {
-        if ((DataContext as ShellViewModel)?.SelectedLocation is not { } location || selectedMedia is null) return;
+        if ((DataContext as ShellViewModel)?.SelectedLocation is not { } location || selectedMedia is null || !System.IO.File.Exists(selectedMedia.RelativePath)) return;
         new MediaViewerDialog(location.Media.ToList(), Math.Max(0, ThumbnailList.SelectedIndex)) { Owner = Window.GetWindow(this) }.ShowDialog();
     }
     private void Edit_Click(object sender, RoutedEventArgs e) { var vm = DataContext as ShellViewModel; new LocationEditorDialog(vm?.SelectedLocation) { Owner = Window.GetWindow(this), DataContext = DataContext }.Show(); }

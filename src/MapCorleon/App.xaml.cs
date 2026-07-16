@@ -32,6 +32,7 @@ public partial class App : Application
         services.AddSingleton<IMediaPathResolver, MediaPathResolver>();
         services.AddSingleton<ITileCacheService, TileCacheService>();
         services.AddSingleton<IProviderStorage, ProviderStorage>();
+        services.AddSingleton<IMediaDownloadService, MediaDownloadService>();
         services.AddSingleton<IMapImportSink, EfMapImportSink>();
         services.AddSingleton<IMapProvider, MapGenieProvider>();
         services.AddSingleton<IMapProviderResolver, MapProviderResolver>();
