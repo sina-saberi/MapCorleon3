@@ -65,6 +65,7 @@ public partial class App : Application
         await using var db = await factory.CreateDbContextAsync();
         await DbSchemaInitializer.InitializeAsync(db);
         await DbSeeder.SeedAsync(db);
+        await _host.Services.GetRequiredService<IImportTaskService>().InitializeAsync();
         _host.Services.GetRequiredService<MainWindow>().Show(); base.OnStartup(e);
     }
     protected override async void OnExit(ExitEventArgs e)

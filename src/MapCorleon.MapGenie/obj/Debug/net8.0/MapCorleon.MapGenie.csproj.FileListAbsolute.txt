@@ -14,3 +14,6 @@ D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.dll
 D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\refint\MapCorleon.MapGenie.dll
 D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\MapCorleon.MapGenie.pdb
 D:\MapCorleon\src\MapCorleon.MapGenie\obj\Debug\net8.0\ref\MapCorleon.MapGenie.dll
+C:\tmp\MapCorleon-verify\MapCorleon.MapGenie.deps.json
+C:\tmp\MapCorleon-verify\MapCorleon.MapGenie.dll
+C:\tmp\MapCorleon-verify\MapCorleon.MapGenie.pdb

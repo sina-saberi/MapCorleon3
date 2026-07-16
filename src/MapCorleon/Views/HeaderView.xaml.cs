@@ -37,7 +37,7 @@ public partial class HeaderView : UserControl
     private void TasksChanged(object? sender, PropertyChangedEventArgs e) => Dispatcher.Invoke(RefreshTask);
     private void RefreshTask()
     {
-        ImportButton.IsEnabled = !tasks.IsRunning;
+        ImportButton.IsEnabled = true;
         TaskPanel.Visibility = tasks.IsRunning || !string.IsNullOrWhiteSpace(tasks.Status) ? Visibility.Visible : Visibility.Collapsed;
         TaskText.Text = tasks.Status;
         TaskProgress.Value = tasks.Percentage;
@@ -45,8 +45,9 @@ public partial class HeaderView : UserControl
     private void Settings_Click(object sender, RoutedEventArgs e) => new SettingsDialog { Owner = Owner }.ShowDialog();
     private void Import_Click(object sender, RoutedEventArgs e)
     {
-        if (!tasks.IsRunning) new ImportDialog { Owner = Owner }.ShowDialog();
+        new ImportDialog { Owner = Owner }.ShowDialog();
     }
+    private void Downloads_Click(object sender, RoutedEventArgs e) => new DownloadTasksDialog { Owner = Owner }.ShowDialog();
     private void Timeline_Click(object sender, RoutedEventArgs e) => new TimelineDialog { Owner = Owner, DataContext = DataContext }.ShowDialog();
     private void Custom_Click(object sender, RoutedEventArgs e) => new LocationEditorDialog { Owner = Owner, DataContext = DataContext }.Show();
 }

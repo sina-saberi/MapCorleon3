@@ -1,15 +1,22 @@
 {
   "version": 2,
-  "dgSpecHash": "YZmAB7Ez784=",
+  "dgSpecHash": "zqbqw67N0GE=",
   "success": true,
   "projectFilePath": "D:\\MapCorleon\\src\\MapCorleon.MapGenie\\MapCorleon.MapGenie.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\sinac\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.28\\microsoft.netcore.app.ref.8.0.28.nupkg.sha512",
-    "C:\\Users\\sinac\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.28\\microsoft.netcore.app.runtime.win-x64.8.0.28.nupkg.sha512",
     "C:\\Users\\sinac\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.28\\microsoft.windowsdesktop.app.ref.8.0.28.nupkg.sha512",
-    "C:\\Users\\sinac\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.28\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.28.nupkg.sha512",
-    "C:\\Users\\sinac\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.28\\microsoft.aspnetcore.app.ref.8.0.28.nupkg.sha512",
-    "C:\\Users\\sinac\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.28\\microsoft.aspnetcore.app.runtime.win-x64.8.0.28.nupkg.sha512"
+    "C:\\Users\\sinac\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.28\\microsoft.netcore.app.ref.8.0.28.nupkg.sha512",
+    "C:\\Users\\sinac\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.28\\microsoft.aspnetcore.app.ref.8.0.28.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "message": "Error occurred while getting package vulnerability data: Received an unexpected EOF or 0 bytes from the transport stream.",
+      "projectPath": "D:\\MapCorleon\\src\\MapCorleon.MapGenie\\MapCorleon.MapGenie.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\MapCorleon\\src\\MapCorleon.MapGenie\\MapCorleon.MapGenie.csproj",
+      "targetGraphs": []
+    }
+  ]
 }

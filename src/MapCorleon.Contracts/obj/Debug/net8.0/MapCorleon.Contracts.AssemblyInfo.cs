@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MapCorleon")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c33e5edae5ea386853f563ac05a69db0af7bd363")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+94079429dd48fcd7512fe597f88d8d4d2d8abd6d")]
 [assembly: System.Reflection.AssemblyProductAttribute("MapCorleon")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MapCorleon.Contracts")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

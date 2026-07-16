@@ -1,8 +1,7 @@
 {
   "version": 4,
   "targets": {
-    "net8.0": {},
-    "net8.0/win-x64": {}
+    "net8.0": {}
   },
   "libraries": {},
   "projectFileDependencyGroups": {
@@ -77,23 +76,11 @@
             "version": "[8.0.28, 8.0.28]"
           },
           {
-            "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
-            "version": "[8.0.28, 8.0.28]"
-          },
-          {
             "name": "Microsoft.NETCore.App.Ref",
             "version": "[8.0.28, 8.0.28]"
           },
           {
-            "name": "Microsoft.NETCore.App.Runtime.win-x64",
-            "version": "[8.0.28, 8.0.28]"
-          },
-          {
             "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[8.0.28, 8.0.28]"
-          },
-          {
-            "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
             "version": "[8.0.28, 8.0.28]"
           }
         ],
@@ -104,11 +91,14 @@
         },
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
       }
-    },
-    "runtimes": {
-      "win-x64": {
-        "#import": []
-      }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Error occurred while getting package vulnerability data: Received an unexpected EOF or 0 bytes from the transport stream."
+    }
+  ]
 }

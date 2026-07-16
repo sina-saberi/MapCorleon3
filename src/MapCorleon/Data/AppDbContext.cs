@@ -4,15 +4,19 @@ namespace MapCorleon.Data;
 
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<Game> Games => Set<Game>(); public DbSet<Map> Maps => Set<Map>(); public DbSet<MapConfig> MapConfigs => Set<MapConfig>(); public DbSet<Group> Groups => Set<Group>(); public DbSet<Category> Categories => Set<Category>(); public DbSet<Location> Locations => Set<Location>(); public DbSet<Media> Media => Set<Media>(); public DbSet<Timeline> Timelines => Set<Timeline>(); public DbSet<Pin> Pins => Set<Pin>(); public DbSet<MarkedLocation> MarkedLocations => Set<MarkedLocation>();
+    public DbSet<Game> Games => Set<Game>(); public DbSet<Map> Maps => Set<Map>(); public DbSet<MapConfig> MapConfigs => Set<MapConfig>(); public DbSet<Group> Groups => Set<Group>(); public DbSet<Category> Categories => Set<Category>(); public DbSet<Location> Locations => Set<Location>(); public DbSet<Media> Media => Set<Media>(); public DbSet<Timeline> Timelines => Set<Timeline>(); public DbSet<Pin> Pins => Set<Pin>(); public DbSet<MarkedLocation> MarkedLocations => Set<MarkedLocation>(); public DbSet<DownloadTask> DownloadTasks => Set<DownloadTask>();
     protected override void OnModelCreating(ModelBuilder b)
     {
-        b.Entity<Game>().ToTable("Games"); b.Entity<Map>().ToTable("Maps"); b.Entity<MapConfig>().ToTable("Map Config"); b.Entity<Group>().ToTable("Groups"); b.Entity<Category>().ToTable("Categories"); b.Entity<Location>().ToTable("Locations"); b.Entity<Media>().ToTable("Media"); b.Entity<Timeline>().ToTable("Timelines"); b.Entity<Pin>().ToTable("Pins"); b.Entity<MarkedLocation>().ToTable("Marked Locations");
+        b.Entity<Game>().ToTable("Games"); b.Entity<Map>().ToTable("Maps"); b.Entity<MapConfig>().ToTable("Map Config"); b.Entity<Group>().ToTable("Groups"); b.Entity<Category>().ToTable("Categories"); b.Entity<Location>().ToTable("Locations"); b.Entity<Media>().ToTable("Media"); b.Entity<Timeline>().ToTable("Timelines"); b.Entity<Pin>().ToTable("Pins"); b.Entity<MarkedLocation>().ToTable("Marked Locations"); b.Entity<DownloadTask>().ToTable("Download Tasks");
         b.Entity<Category>().Ignore(x => x.TotalLocationCount).Ignore(x => x.PickedLocationCount).Ignore(x => x.ProgressText);
+        b.Entity<DownloadTask>().Ignore(x => x.Percentage).Ignore(x => x.MapDisplayName).Ignore(x => x.DownloadKinds)
+            .Ignore(x => x.ProgressText).Ignore(x => x.CanAct).Ignore(x => x.ActionText);
         b.Entity<Map>().HasOne(x => x.Game).WithMany(x => x.Maps).HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<DownloadTask>().HasOne(x => x.Map).WithMany(x => x.DownloadTasks).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<MapConfig>().HasOne(x => x.Map).WithOne(x => x.Config).HasForeignKey<MapConfig>(x => x.MapId).OnDelete(DeleteBehavior.Cascade); b.Entity<MapConfig>().HasIndex(x => x.MapId).IsUnique();
         b.Entity<Group>().HasOne(x => x.Map).WithMany(x => x.Groups).HasForeignKey(x => x.MapId); b.Entity<Category>().HasOne(x => x.Group).WithMany(x => x.Categories).HasForeignKey(x => x.GroupId); b.Entity<Location>().HasOne(x => x.Category).WithMany(x => x.Locations).HasForeignKey(x => x.CategoryId); b.Entity<Location>().HasOne(x => x.Timeline).WithMany(x => x.CustomLocations).HasForeignKey(x => x.TimelineId).OnDelete(DeleteBehavior.Cascade); b.Entity<Media>().HasOne(x => x.Location).WithMany(x => x.Media).HasForeignKey(x => x.LocationId); b.Entity<Timeline>().HasOne(x => x.Map).WithMany(x => x.Timelines).HasForeignKey(x => x.MapId); b.Entity<Pin>().HasOne(x => x.Timeline).WithMany(x => x.Pins).HasForeignKey(x => x.TimelineId); b.Entity<MarkedLocation>().HasOne(x => x.Location).WithMany(x => x.Marks).HasForeignKey(x => x.LocationId); b.Entity<MarkedLocation>().HasOne(x => x.Timeline).WithMany(x => x.Marks).HasForeignKey(x => x.TimelineId);
         b.Entity<MarkedLocation>().HasIndex(x => new { x.TimelineId, x.LocationId }).IsUnique(); b.Entity<Media>().HasIndex(x => x.ContentHash); b.Entity<Location>().HasIndex(x => new { x.CategoryId, x.Title }); b.Entity<Timeline>().HasIndex(x => new { x.MapId, x.SortOrder });
+        b.Entity<DownloadTask>().HasIndex(x => x.UpdatedAtUtc);
         b.Entity<Map>().HasIndex(x => new { x.GameId, x.ExternalId }).IsUnique(); b.Entity<Group>().HasIndex(x => new { x.MapId, x.ExternalId }).IsUnique(); b.Entity<Category>().HasIndex(x => new { x.GroupId, x.ExternalId }).IsUnique(); b.Entity<Location>().HasIndex(x => new { x.CategoryId, x.ExternalId }).IsUnique(); b.Entity<Media>().HasIndex(x => new { x.LocationId, x.ExternalId }).IsUnique();
     }
 }
@@ -101,6 +105,7 @@ CREATE TABLE IF NOT EXISTS "Media" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Media" 
 CREATE TABLE IF NOT EXISTS "Timelines" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Timelines" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "Name" TEXT NOT NULL, "SortOrder" INTEGER NOT NULL, CONSTRAINT "FK_Timelines_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS "Pins" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Pins" PRIMARY KEY AUTOINCREMENT, "TimelineId" INTEGER NOT NULL, "LocationId" INTEGER NULL, "Latitude" REAL NOT NULL, "Longitude" REAL NOT NULL, "Title" TEXT NULL, CONSTRAINT "FK_Pins_Timelines_TimelineId" FOREIGN KEY ("TimelineId") REFERENCES "Timelines" ("Id") ON DELETE CASCADE, CONSTRAINT "FK_Pins_Locations_LocationId" FOREIGN KEY ("LocationId") REFERENCES "Locations" ("Id"));
 CREATE TABLE IF NOT EXISTS "Marked Locations" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Marked_Locations" PRIMARY KEY AUTOINCREMENT, "LocationId" INTEGER NOT NULL, "TimelineId" INTEGER NOT NULL, "MarkedAtUtc" TEXT NOT NULL, CONSTRAINT "FK_Marked_Locations_Locations_LocationId" FOREIGN KEY ("LocationId") REFERENCES "Locations" ("Id") ON DELETE CASCADE, CONSTRAINT "FK_Marked_Locations_Timelines_TimelineId" FOREIGN KEY ("TimelineId") REFERENCES "Timelines" ("Id") ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS "Download Tasks" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Download_Tasks" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "Provider" TEXT NOT NULL, "DownloadMedia" INTEGER NOT NULL, "DownloadTiles" INTEGER NOT NULL, "Status" TEXT NOT NULL, "CompletedItems" INTEGER NOT NULL, "TotalItems" INTEGER NOT NULL, "FailedItems" INTEGER NOT NULL, "Error" TEXT NULL, "CreatedAtUtc" TEXT NOT NULL, "UpdatedAtUtc" TEXT NOT NULL, CONSTRAINT "FK_Download_Tasks_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_Map_Config_MapId" ON "Map Config" ("MapId");
 CREATE INDEX IF NOT EXISTS "IX_Maps_GameId" ON "Maps" ("GameId");
 CREATE INDEX IF NOT EXISTS "IX_Groups_MapId" ON "Groups" ("MapId");
@@ -111,6 +116,7 @@ CREATE INDEX IF NOT EXISTS "IX_Media_LocationId" ON "Media" ("LocationId");
 CREATE INDEX IF NOT EXISTS "IX_Timelines_MapId_SortOrder" ON "Timelines" ("MapId", "SortOrder");
 CREATE INDEX IF NOT EXISTS "IX_Pins_TimelineId" ON "Pins" ("TimelineId");
 CREATE INDEX IF NOT EXISTS "IX_Pins_LocationId" ON "Pins" ("LocationId");
+CREATE INDEX IF NOT EXISTS "IX_Download_Tasks_UpdatedAtUtc" ON "Download Tasks" ("UpdatedAtUtc");
 """;
 }
 

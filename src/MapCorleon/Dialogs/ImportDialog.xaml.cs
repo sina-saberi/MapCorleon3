@@ -18,12 +18,10 @@ public partial class ImportDialog : Window
         ProviderBox.ItemsSource = resolver.All;
         ProviderBox.SelectedIndex = 0;
         tasks = App.Services.GetRequiredService<IImportTaskService>();
-        if (tasks.IsRunning) { SubmitButton.IsEnabled = false; StatusText.Text = "Another import or offline download is already running."; }
     }
 
     private async void Submit_Click(object sender, RoutedEventArgs e)
     {
-        if (tasks.IsRunning) { MessageBox.Show(this, "Wait for the current import download to finish.", "Import busy"); return; }
         if (ProviderBox.SelectedItem is not IMapProvider provider ||
             !Uri.TryCreate(PageUrl.Text.Trim(), UriKind.Absolute, out var uri) ||
             uri.Scheme is not ("http" or "https"))

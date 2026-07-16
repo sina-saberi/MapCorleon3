@@ -15,4 +15,5 @@ public sealed class Map : IEntity
     public MapConfig? Config { get; set; }
     public ICollection<Group> Groups { get; set; } = [];
     public ICollection<Timeline> Timelines { get; set; } = [];
+    public ICollection<DownloadTask> DownloadTasks { get; set; } = [];
 }

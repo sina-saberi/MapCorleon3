@@ -5,12 +5,13 @@
     <DockPanel>
       <TextBlock Text="MapCorleon" Foreground="White" FontSize="23" FontWeight="SemiBold" VerticalAlignment="Center"/>
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-        <StackPanel x:Name="TaskPanel" Width="240" Margin="6,0,12,0" VerticalAlignment="Center" Visibility="Collapsed">
-          <TextBlock x:Name="TaskText" Foreground="#D9E4F2" TextTrimming="CharacterEllipsis"/>
-          <ProgressBar x:Name="TaskProgress" Minimum="0" Maximum="100" Height="5"/>
+        <StackPanel x:Name="TaskPanel" Width="280" Margin="6,0,12,0" VerticalAlignment="Center" Visibility="Collapsed">
+          <TextBlock x:Name="TaskText" Foreground="#D9E4F2" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+          <ProgressBar x:Name="TaskProgress" Minimum="0" Maximum="100" Height="5" Margin="0,4,0,0"/>
         </StackPanel>
         <Button Content="Settings" Click="Settings_Click"/>
         <Button x:Name="ImportButton" Content="Import Map" Click="Import_Click"/>
+        <Button Content="Downloads" Click="Downloads_Click"/>
         <Button Content="Timelines &amp; Maps" Click="Timeline_Click"/>
         <Button Content="+ Custom Location" Click="Custom_Click"/>
       </StackPanel>
