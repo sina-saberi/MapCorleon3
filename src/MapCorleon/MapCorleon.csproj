@@ -2,8 +2,11 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><NoWarn>$(NoWarn);NU1701</NoWarn>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Resource Include="Assets\AppIcon.png" />
+    <Resource Include="Assets\AppIcon.ico" />
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
     <ProjectReference Include="..\MapCorleon.Contracts\MapCorleon.Contracts.csproj" />
     <ProjectReference Include="..\MapCorleon.MapGenie\MapCorleon.MapGenie.csproj" />

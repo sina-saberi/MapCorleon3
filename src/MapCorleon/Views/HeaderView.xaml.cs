@@ -41,6 +41,7 @@ public partial class HeaderView : UserControl
         TaskPanel.Visibility = tasks.IsRunning ? Visibility.Visible : Visibility.Collapsed;
         TaskText.Text = tasks.ActiveTaskLabel;
         TaskProgress.Value = tasks.Percentage;
+        TaskPercent.Text = $"{tasks.Percentage}%";
     }
     private void Settings_Click(object sender, RoutedEventArgs e) => new SettingsDialog { Owner = Owner }.ShowDialog();
     private void Import_Click(object sender, RoutedEventArgs e)

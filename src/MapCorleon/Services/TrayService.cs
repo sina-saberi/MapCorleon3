@@ -29,10 +29,13 @@ public sealed class TrayService : ITrayService
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty));
 
+        var executableIcon = Environment.ProcessPath is { } executable
+            ? Icon.ExtractAssociatedIcon(executable)
+            : null;
         icon = new Forms.NotifyIcon
         {
             Text = "MapCorleon",
-            Icon = SystemIcons.Application,
+            Icon = executableIcon ?? SystemIcons.Application,
             ContextMenuStrip = menu,
             Visible = true
         };

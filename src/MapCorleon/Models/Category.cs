@@ -32,7 +32,7 @@ public sealed class Category : IEntity, INotifyPropertyChanged
         private set { if (pickedLocationCount == value) return; pickedLocationCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressText)); }
     }
     [NotMapped]
-    public string ProgressText => $"{TotalLocationCount}/{PickedLocationCount}";
+    public string ProgressText => $"{PickedLocationCount}/{TotalLocationCount}";
 
     public Group? Group { get; set; }
     public ICollection<Location> Locations { get; set; } = [];

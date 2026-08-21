@@ -104,6 +104,8 @@ public sealed class ShellViewModel : ViewModelBase
     public int PickedCount => allLocations.Count(location => location.Marks.Count > 0);
     public int TotalCount => allLocations.Count;
     public string ProgressText => $"{PickedCount} locations picked from {TotalCount} total";
+    public string ProgressSummary => $"{PickedCount:N0} of {TotalCount:N0} marked";
+    public int ProgressPercentage => TotalCount == 0 ? 0 : (int)Math.Round(PickedCount * 100d / TotalCount);
 
     public bool IsLoading
     {
@@ -267,6 +269,8 @@ public sealed class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(PickedCount));
         OnPropertyChanged(nameof(TotalCount));
         OnPropertyChanged(nameof(ProgressText));
+        OnPropertyChanged(nameof(ProgressSummary));
+        OnPropertyChanged(nameof(ProgressPercentage));
     }
 
     private void SetCategoryVisibility(Category category, bool visible)
