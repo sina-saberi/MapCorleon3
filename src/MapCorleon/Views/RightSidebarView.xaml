@@ -31,9 +31,21 @@
         <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Visible"/>
           <Style.Triggers><DataTrigger Binding="{Binding}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
         </Style></Grid.Style>
-        <Grid.RowDefinitions><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Border Grid.Row="0" Background="#172131" BorderBrush="#303C4E" BorderThickness="0,0,0,1" Padding="16,11">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="×" Width="32" Height="32" Margin="8,0,0,0" Padding="0"
+                    Background="Transparent" BorderThickness="0" FontSize="20" Foreground="#AFC0D4"
+                    ToolTip="Close location details" Click="Close_Click"/>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="LOCATION DETAILS" Foreground="#7F91A8" FontSize="10" FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding Title}" Foreground="#CFD9E7" FontSize="12" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+          </DockPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Margin="16,16,16,4">
             <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding Media.Count,Converter={StaticResource CountToVisibility}}">
               <StackPanel>
@@ -87,7 +99,7 @@
           </StackPanel>
         </ScrollViewer>
 
-        <Border Grid.Row="1" Background="#151B25" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="13,10">
+        <Border Grid.Row="2" Background="#151B25" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="13,10">
           <StackPanel>
             <Button Content="◎  Center on map" Click="Move_Click" Background="#315B9C" Padding="12,10" Margin="3,3,3,7"/>
             <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
