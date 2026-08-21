@@ -26,5 +26,6 @@ public sealed class DownloadTask : IEntity
         + (FailedItems > 0 ? $" · {FailedItems:N0} failed" : string.Empty);
     public bool CanAct => Status != "Completed";
     public string ActionText => Status == "Running" ? "Pause"
-        : Status == "Failed" ? "Retry" : "Resume";
+        : Status == "Failed" ? "Retry"
+        : Status == "Pending" ? "Start" : "Resume";
 }

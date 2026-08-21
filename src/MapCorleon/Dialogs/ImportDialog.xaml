@@ -11,7 +11,7 @@
                Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="2,0,2,12"/>
     <CheckBox x:Name="DownloadMedia" Content="Download all media after importing" Margin="2,4"/>
     <CheckBox x:Name="DownloadTiles" Content="Download all map tiles after importing" Margin="2,4"/>
-    <TextBlock Text="Selected downloads continue in the background. The map remains usable and unselected content downloads normally on demand."
+    <TextBlock Text="Media and tiles are added as separate queue items. The map remains usable and unselected content downloads normally on demand."
                Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="2,8"/>
     <TextBlock x:Name="StatusText" TextWrapping="Wrap" Margin="3,10"/>
     <ProgressBar x:Name="ProgressBar" Minimum="0" Maximum="100" Height="7" Visibility="Collapsed"/>

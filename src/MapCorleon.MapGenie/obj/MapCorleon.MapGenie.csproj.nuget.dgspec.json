@@ -5,7 +5,7 @@
   },
   "projects": {
     "D:\\MapCorleon\\src\\MapCorleon.Contracts\\MapCorleon.Contracts.csproj": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "restore": {
         "projectUniqueName": "D:\\MapCorleon\\src\\MapCorleon.Contracts\\MapCorleon.Contracts.csproj",
         "projectName": "MapCorleon.Contracts",
@@ -87,7 +87,7 @@
       }
     },
     "D:\\MapCorleon\\src\\MapCorleon.MapGenie\\MapCorleon.MapGenie.csproj": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "restore": {
         "projectUniqueName": "D:\\MapCorleon\\src\\MapCorleon.MapGenie\\MapCorleon.MapGenie.csproj",
         "projectName": "MapCorleon.MapGenie",

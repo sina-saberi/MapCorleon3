@@ -4,7 +4,6 @@ using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using BruTile;
 using BruTile.Cache;
@@ -84,8 +83,10 @@ public partial class MapView
         var config = viewModel?.CurrentMapConfig;
         if (config is null || string.IsNullOrWhiteSpace(config.TilePattern)) return;
         spriteSource = null;
-        var minimumZoom = config.MinZoom ?? 0;
-        var maximumZoom = config.MaxZoom ?? 19;
+        var coverage = TileCoverage.Create(config);
+        if (coverage is null) return;
+        var minimumZoom = coverage.MinZoom;
+        var maximumZoom = coverage.MaxZoom;
         tileSchema = new GlobalSphericalMercator(YAxis.OSM, minimumZoom, maximumZoom, "png");
         var template = config.TilePattern;
         var settings = App.Services.GetRequiredService<ISettingsService>().Current;
@@ -102,15 +103,19 @@ public partial class MapView
                 request.Headers.UserAgent.ParseAdd(TileUserAgent);
                 request.Headers.Accept.ParseAdd("image/avif,image/webp,image/apng,image/*,*/*;q=0.8");
             });
-        var tileBounds = string.IsNullOrWhiteSpace(config.TileBoundsJson)
-            ? null
-            : JsonSerializer.Deserialize<Dictionary<int, MapCorleon.Contracts.TileRange>>(config.TileBoundsJson);
-        if (tileBounds is not null && tileBounds.TryGetValue(minimumZoom, out var minimumBounds))
-            tileSchema.Extent = TileBoundsToExtent(tileSchema, minimumZoom, minimumBounds);
+        var tileBounds = coverage.Ranges;
+        tileSchema.Extent = TileBoundsToExtent(tileSchema, minimumZoom, tileBounds[minimumZoom]);
         var tileHttpClient = new HttpClient(new ProviderTileHandler(provider, template, tileBounds));
         tileHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd(TileUserAgent);
         var map = new Mapsui.Map { CRS = "EPSG:3857", BackColor = new Color(17, 25, 35) };
         map.Layers.Add(new TileLayer(tileSource, httpClient: tileHttpClient) { Name = $"{provider.Key} Tiles" });
+        map.Navigator.OverrideResolutions = coverage.ZoomLevels.Select(x => tileSchema.Resolutions[x].UnitsPerPixel).ToList();
+        map.Navigator.OverrideZoomBounds = new MMinMax(
+            tileSchema.Resolutions[maximumZoom].UnitsPerPixel,
+            tileSchema.Resolutions[minimumZoom].UnitsPerPixel);
+        map.Navigator.OverridePanBounds = new MRect(
+            tileSchema.Extent.MinX, tileSchema.Extent.MinY,
+            tileSchema.Extent.MaxX, tileSchema.Extent.MaxY);
         MapControl.Map = map;
         RebuildLocations();
         if (!string.IsNullOrWhiteSpace(config.SpriteImagePath) && File.Exists(config.SpriteImagePath))
@@ -218,8 +223,6 @@ public partial class MapView
 
     private sealed class ProviderTileHandler : HttpMessageHandler
     {
-        private static readonly byte[] TransparentTile = Convert.FromBase64String(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+Xw4AAAAASUVORK5CYII=");
         private readonly IMapProvider provider;
         private readonly IReadOnlyDictionary<int, MapCorleon.Contracts.TileRange>? bounds;
         private readonly Regex tileUrl;
@@ -238,7 +241,7 @@ public partial class MapView
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            if (request.RequestUri is null) return TileResponse(TransparentTile);
+            if (request.RequestUri is null) return TileResponse(TilePlaceholder.TransparentPng);
             var url = request.RequestUri.ToString();
             var match = tileUrl.Match(url);
             if (bounds is not null && match.Success &&
@@ -247,11 +250,11 @@ public partial class MapView
                 int.TryParse(match.Groups["y"].Value, out var y) &&
                 (!bounds.TryGetValue(zoom, out var range) ||
                  x < range.MinX || x > range.MaxX || y < range.MinY || y > range.MaxY))
-                return TileResponse(TransparentTile);
+                return TileResponse(TilePlaceholder.TransparentPng);
 
             var bytes = await provider.DownloadTileAsync(url, ct);
             return bytes is null
-                ? TileResponse(TransparentTile)
+                ? TileResponse(TilePlaceholder.TransparentPng)
                 : TileResponse(bytes);
         }
 

@@ -15,6 +15,28 @@
                    Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,5,12,0"/>
       </StackPanel>
     </DockPanel>
+    <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4"
+            Padding="12" Margin="3,0,3,12">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel>
+          <TextBlock Text="ADD AN IMPORTED MAP" Foreground="{StaticResource MutedTextBrush}" FontSize="11"/>
+          <ComboBox x:Name="MapBox" DisplayMemberPath="DisplayName" MinWidth="300" Margin="0,5,12,7"/>
+          <StackPanel Orientation="Horizontal">
+            <CheckBox x:Name="AddMedia" Content="Media" IsChecked="True" Margin="2,2,18,2"/>
+            <CheckBox x:Name="AddTiles" Content="Tiles" Margin="2"/>
+          </StackPanel>
+          <TextBlock x:Name="AddStatus" Foreground="{StaticResource MutedTextBrush}"
+                     TextWrapping="Wrap" Margin="0,7,12,0"/>
+        </StackPanel>
+        <Button x:Name="AddButton" Grid.Column="1" Content="Add to queue" Click="AddTask_Click"
+                VerticalAlignment="Center" MinWidth="110"/>
+      </Grid>
+    </Border>
     <Button DockPanel.Dock="Bottom" Content="Close" IsCancel="True" HorizontalAlignment="Right" Margin="3,12,3,3"/>
     <ListBox x:Name="TaskList" BorderThickness="0" Padding="0">
       <ListBox.ItemContainerStyle>

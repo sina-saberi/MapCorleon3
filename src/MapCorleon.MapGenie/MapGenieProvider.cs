@@ -67,6 +67,14 @@ public sealed class MapGenieProvider(IMapImportSink sink, IProviderStorage stora
         using var request = CreateRequest(url, "image/avif,image/webp,image/apng,image/*,*/*;q=0.8", "image");
         using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        if (response.StatusCode == HttpStatusCode.Forbidden)
+        {
+            // MapGenie's S3 tile storage returns AccessDenied for coordinates
+            // inside its rectangular bounds where no tile object exists.
+            var error = await response.Content.ReadAsStringAsync(ct);
+            if (error.Contains("<Code>AccessDenied</Code>", StringComparison.OrdinalIgnoreCase))
+                return null;
+        }
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsByteArrayAsync(ct);
     }

@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Diagnostics;
 using System.IO;
 using MapCorleon.Services;
+using MapCorleon.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MapCorleon.Dialogs;
@@ -28,6 +29,8 @@ public partial class DownloadTasksDialog : Window
             tasks.TasksChanged += TasksChanged;
             subscribed = true;
         }
+        MapBox.ItemsSource = await tasks.GetDownloadableMapsAsync();
+        if (MapBox.Items.Count > 0) MapBox.SelectedIndex = 0;
         await ReloadAsync();
     }
 
@@ -47,6 +50,36 @@ public partial class DownloadTasksDialog : Window
         await ReloadAsync();
     }
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await ReloadAsync();
+    private async void AddTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (MapBox.SelectedItem is not Map map)
+        {
+            AddStatus.Text = "Select an imported map.";
+            return;
+        }
+        var media = AddMedia.IsChecked == true;
+        var tiles = AddTiles.IsChecked == true;
+        if (!media && !tiles)
+        {
+            AddStatus.Text = "Select media, tiles, or both.";
+            return;
+        }
+
+        AddButton.IsEnabled = false;
+        try
+        {
+            var count = await tasks.EnqueueAsync(map.Id, media, tiles);
+            AddStatus.Text = count == 1
+                ? "Added 1 separate download item."
+                : $"Added {count} separate download items.";
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            AddStatus.Text = $"Could not add download: {ex.Message}";
+        }
+        finally { AddButton.IsEnabled = true; }
+    }
     private void OpenLog_Click(object sender, RoutedEventArgs e)
     {
         var settings = App.Services.GetRequiredService<ISettingsService>();

@@ -19,7 +19,7 @@ dotnet publish src/MapCorleon/MapCorleon.csproj `
   -c Release `
   -r win-x64 `
   --self-contained true `
-  -o artifacts/MapCorleon-1.0.0-win-x64
+  -o artifacts/MapCorleon-1.0.1-win-x64
 ```
 
 Run `MapCorleon.exe` from the resulting folder. Keep the other published files

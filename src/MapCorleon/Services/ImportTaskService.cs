@@ -1,10 +1,8 @@
 using System.ComponentModel;
 using System.IO;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Diagnostics;
 using MapCorleon.Contracts;
 using MapCorleon.Data;
@@ -24,7 +22,9 @@ public interface IImportTaskService : INotifyPropertyChanged
     event EventHandler? TasksChanged;
     Task InitializeAsync();
     Task<IReadOnlyList<DownloadTask>> GetTasksAsync();
-    bool TryStart(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl = null);
+    Task<IReadOnlyList<Map>> GetDownloadableMapsAsync();
+    Task<int> EnqueueImportedAsync(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl = null);
+    Task<int> EnqueueAsync(int mapId, bool downloadMedia, bool downloadTiles);
     Task PauseAsync(int taskId);
     Task ResumeAsync(int taskId);
     Task CancelAsync(int taskId);
@@ -79,12 +79,40 @@ public sealed class ImportTaskService(
             .OrderByDescending(x => x.UpdatedAtUtc).ToListAsync();
     }
 
-    public bool TryStart(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl = null)
+    public async Task<IReadOnlyList<Map>> GetDownloadableMapsAsync()
     {
-        if (!downloadMedia && !downloadTiles) return false;
-        Status = "Creating offline download task";
-        _ = CreateAndSwitchAsync(provider, result, downloadMedia, downloadTiles, sourcePageUrl);
-        return true;
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.Maps.AsNoTracking().Include(x => x.Game).Include(x => x.Config)
+            .Where(x => x.Config != null)
+            .OrderBy(x => x.Game!.Name).ThenBy(x => x.Name).ToListAsync();
+    }
+
+    public async Task<int> EnqueueImportedAsync(
+        IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl = null)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var mapId = await db.Maps
+            .Where(x => x.ExternalId == result.MapExternalId && x.Name == result.MapName)
+            .Select(x => x.Id).FirstAsync();
+        return await EnqueueCoreAsync(mapId, provider.Key, downloadMedia, downloadTiles, sourcePageUrl);
+    }
+
+    public async Task<int> EnqueueAsync(int mapId, bool downloadMedia, bool downloadTiles)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var map = await db.Maps.AsNoTracking().Include(x => x.Config).FirstOrDefaultAsync(x => x.Id == mapId)
+            ?? throw new InvalidOperationException("The selected map no longer exists.");
+        var provider = map.Config?.Provider;
+        if (string.IsNullOrWhiteSpace(provider))
+            throw new InvalidOperationException("The selected map has no download provider.");
+        if (downloadTiles && (string.IsNullOrWhiteSpace(map.Config?.TilePattern) || TileCoverage.Create(map.Config) is null))
+            throw new InvalidOperationException("The selected map has no downloadable tile coverage.");
+        var sourcePageUrl = await db.DownloadTasks.AsNoTracking()
+            .Where(x => x.MapId == mapId && x.SourcePageUrl != null)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Select(x => x.SourcePageUrl)
+            .FirstOrDefaultAsync();
+        return await EnqueueCoreAsync(mapId, provider, downloadMedia, downloadTiles, sourcePageUrl);
     }
 
     public Task PauseAsync(int taskId)
@@ -169,32 +197,47 @@ public sealed class ImportTaskService(
         finally { switchLock.Release(); }
     }
 
-    private async Task CreateAndSwitchAsync(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl)
+    private async Task<int> EnqueueCoreAsync(
+        int mapId, string providerKey, bool downloadMedia, bool downloadTiles, string? sourcePageUrl)
     {
+        if (!downloadMedia && !downloadTiles) return 0;
         await switchLock.WaitAsync();
         try
         {
-            await StopActiveAsync();
             await using var db = await factory.CreateDbContextAsync();
-            var map = await db.Maps.FirstAsync(x => x.ExternalId == result.MapExternalId);
-            var task = new DownloadTask
-            {
-                MapId = map.Id, Provider = provider.Key, SourcePageUrl = sourcePageUrl,
-                DownloadMedia = downloadMedia, DownloadTiles = downloadTiles,
-                Status = Pending, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow
-            };
-            db.DownloadTasks.Add(task);
+            if (!await db.Maps.AnyAsync(x => x.Id == mapId))
+                throw new InvalidOperationException("The selected map no longer exists.");
+            var provider = providers.All.FirstOrDefault(x => x.Key == providerKey)
+                ?? throw new InvalidOperationException($"Download provider '{providerKey}' is not available.");
+
+            var now = DateTime.UtcNow;
+            var created = new List<DownloadTask>(2);
+            if (downloadMedia) created.Add(CreateTask(mapId, providerKey, sourcePageUrl, downloadMedia: true, now));
+            if (downloadTiles) created.Add(CreateTask(mapId, providerKey, sourcePageUrl, downloadMedia: false, now));
+            db.DownloadTasks.AddRange(created);
             await db.SaveChangesAsync();
+            Status = created.Count == 1 ? "Added offline download to queue" : "Added 2 offline downloads to queue";
             RaiseTasksChanged();
-            StartOperation(provider, task.Id);
-        }
-        catch (Exception ex)
-        {
-            Error = ex.Message;
-            Status = $"Could not create offline download task: {ex.Message}";
+
+            if (activeTaskId is null)
+                StartOperation(provider, created[0].Id);
+            return created.Count;
         }
         finally { switchLock.Release(); }
     }
+
+    private static DownloadTask CreateTask(
+        int mapId, string provider, string? sourcePageUrl, bool downloadMedia, DateTime now) => new()
+    {
+        MapId = mapId,
+        Provider = provider,
+        SourcePageUrl = sourcePageUrl,
+        DownloadMedia = downloadMedia,
+        DownloadTiles = !downloadMedia,
+        Status = Pending,
+        CreatedAtUtc = now,
+        UpdatedAtUtc = now
+    };
 
     private async Task StopActiveAsync(int? requestedTaskId = null)
     {
@@ -268,9 +311,8 @@ public sealed class ImportTaskService(
                     var bytes = await provider.DownloadTileAsync(tile.Url, itemCancellation.Token)
                         .WaitAsync(itemCancellation.Token);
                     itemCancellation.Token.ThrowIfCancellationRequested();
-                    if (bytes is null) throw new HttpRequestException("The server returned no tile data.");
                     Directory.CreateDirectory(Path.GetDirectoryName(tile.Path)!);
-                    await File.WriteAllBytesAsync(tile.Path, bytes, ct);
+                    await File.WriteAllBytesAsync(tile.Path, bytes ?? TilePlaceholder.TransparentPng, ct);
                     Trace.WriteLine($"[MapCorleon DownloadTask #{taskId}] Tile saved {tile.Path}");
                     completed++;
                 }
@@ -314,7 +356,36 @@ public sealed class ImportTaskService(
             }
             await LoadTaskAsync(taskId);
             RaiseTasksChanged();
+            _ = StartNextPendingAsync();
         }
+    }
+
+    private async Task StartNextPendingAsync()
+    {
+        await switchLock.WaitAsync();
+        try
+        {
+            if (activeTaskId is not null) return;
+            await using var db = await factory.CreateDbContextAsync();
+            var next = await db.DownloadTasks.AsNoTracking()
+                .Where(x => x.Status == Pending)
+                .OrderBy(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+                .FirstOrDefaultAsync();
+            if (next is null) return;
+            var provider = providers.All.FirstOrDefault(x => x.Key == next.Provider);
+            if (provider is null)
+            {
+                await UpdateTaskAsync(next.Id, Failed, $"Download provider '{next.Provider}' is not available.");
+                return;
+            }
+            StartOperation(provider, next.Id);
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            Status = $"Could not start the next queued download: {ex.Message}";
+        }
+        finally { switchLock.Release(); }
     }
 
     private async Task<DownloadPlan> BuildPlanAsync(AppDbContext db, DownloadTask task, CancellationToken ct)
@@ -330,17 +401,14 @@ public sealed class ImportTaskService(
         if (task.DownloadTiles)
         {
             var config = await db.MapConfigs.AsNoTracking().FirstAsync(x => x.MapId == task.MapId, ct);
-            if (!string.IsNullOrWhiteSpace(config.TilePattern) && config.MinZoom is not null && config.MaxZoom is not null)
+            var coverage = TileCoverage.Create(config);
+            if (!string.IsNullOrWhiteSpace(config.TilePattern) && coverage is not null)
             {
-                var exact = string.IsNullOrWhiteSpace(config.TileBoundsJson) ? null : JsonSerializer.Deserialize<Dictionary<int, TileRange>>(config.TileBoundsJson);
                 var cache = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(config.TilePattern)))[..16];
-                for (var z = config.MinZoom.Value; z <= config.MaxZoom.Value; z++)
+                foreach (var (z, range) in coverage.Ranges.OrderBy(x => x.Key))
                 {
-                    var range = exact is not null && exact.TryGetValue(z, out var b)
-                        ? (b.MinX, b.MaxX, b.MinY, b.MaxY)
-                        : GetRange(config.MinLatitude, config.MaxLatitude, config.MinLongitude, config.MaxLongitude, z);
-                    for (var x = range.Item1; x <= range.Item2; x++)
-                    for (var y = range.Item3; y <= range.Item4; y++)
+                    for (var x = range.MinX; x <= range.MaxX; x++)
+                    for (var y = range.MinY; y <= range.MaxY; y++)
                     {
                         var path = Path.Combine(settings.Current.TileDirectory, "mapsui", cache, z.ToString(), x.ToString(), $"{y}.tile");
                         total++;
@@ -416,20 +484,6 @@ public sealed class ImportTaskService(
     }
     private static bool IsRemote(string value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https";
-    private static (int, int, int, int) GetRange(double minLat, double maxLat, double minLon, double maxLon, int zoom)
-    {
-        var a = ToTile(minLat, minLon, zoom); var b = ToTile(maxLat, maxLon, zoom);
-        return (Math.Min(a.X, b.X), Math.Max(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.Y, b.Y));
-    }
-    private static (int X, int Y) ToTile(double latitude, double longitude, int zoom)
-    {
-        latitude = Math.Clamp(latitude, -85.05112878, 85.05112878);
-        var scale = 1 << zoom;
-        var x = (int)Math.Floor((longitude + 180) / 360 * scale);
-        var radians = latitude * Math.PI / 180;
-        var y = (int)Math.Floor((1 - Math.Log(Math.Tan(radians) + 1 / Math.Cos(radians)) / Math.PI) / 2 * scale);
-        return (Math.Clamp(x, 0, scale - 1), Math.Clamp(y, 0, scale - 1));
-    }
     private sealed record TileWork(string Url, string Path);
     private sealed record DownloadPlan(
         IReadOnlyList<Media> Media,
