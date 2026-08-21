@@ -6,9 +6,20 @@
             BorderBrush="{StaticResource BorderBrush}"
             BorderThickness="0,0,1,0">
         <DockPanel>
-            <TextBox DockPanel.Dock="Top"
-                     Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Search locations, categories, and groups" />
+            <Grid DockPanel.Dock="Top" Margin="3,3,3,6">
+                <TextBox x:Name="SearchBox" Margin="0" Padding="10,8,36,8"
+                         Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search locations, categories, and groups" />
+                <TextBlock Margin="11,0,38,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                           Foreground="{StaticResource MutedTextBrush}" Text="Search locations…">
+                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers><DataTrigger Binding="{Binding Text,ElementName=SearchBox}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                    </Style></TextBlock.Style>
+                </TextBlock>
+                <Button Content="×" Width="30" Height="30" Padding="0" Margin="0,0,3,0"
+                        HorizontalAlignment="Right" VerticalAlignment="Center" Click="ClearSearch_Click"
+                        ToolTip="Clear search" Visibility="{Binding IsSearchActive,Converter={StaticResource BoolToVisibility}}"/>
+            </Grid>
 
             <UniformGrid DockPanel.Dock="Top" Columns="3">
                 <UniformGrid.Resources>
@@ -64,6 +75,9 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <ItemsControl ItemsSource="{Binding Groups}">
+                        <ItemsControl.Style><Style TargetType="ItemsControl"><Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding IsSearchActive}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+                        </Style></ItemsControl.Style>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Expander Margin="3"
@@ -115,7 +129,6 @@
                     </ItemsControl>
 
                     <StackPanel Visibility="{Binding IsSearchActive, Converter={StaticResource BoolToVisibility}}">
-                        <Separator />
                         <TextBlock Margin="5"
                                    Foreground="{StaticResource MutedTextBrush}"
                                    Text="Search results" />

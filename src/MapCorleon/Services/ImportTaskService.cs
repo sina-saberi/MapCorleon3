@@ -16,6 +16,7 @@ public interface IImportTaskService : INotifyPropertyChanged
     bool IsRunning { get; }
     bool CanPause { get; }
     string Status { get; }
+    string ActiveTaskLabel { get; }
     string? Error { get; }
     int Percentage { get; }
     event EventHandler? MediaDownloaded;
@@ -34,7 +35,8 @@ public sealed class ImportTaskService(
     IDbContextFactory<AppDbContext> factory,
     IMediaDownloadService mediaDownloads,
     ISettingsService settings,
-    IMapProviderResolver providers) : IImportTaskService
+    IMapProviderResolver providers,
+    IAppLogService appLogs) : IImportTaskService
 {
     private const string Pending = "Pending", Running = "Running", Paused = "Paused", Failed = "Failed", Completed = "Completed";
     private readonly SemaphoreSlim switchLock = new(1, 1);
@@ -43,6 +45,7 @@ public sealed class ImportTaskService(
     private int? activeTaskId;
     private bool isRunning;
     private string status = string.Empty;
+    private string activeTaskLabel = string.Empty;
     private string? error;
     private int percentage;
     private DateTime lastProgressPersistUtc = DateTime.MinValue;
@@ -50,6 +53,7 @@ public sealed class ImportTaskService(
     public bool IsRunning { get => isRunning; private set { if (Set(ref isRunning, value)) OnPropertyChanged(nameof(CanPause)); } }
     public bool CanPause => IsRunning && activeTaskId is not null;
     public string Status { get => status; private set => Set(ref status, value); }
+    public string ActiveTaskLabel { get => activeTaskLabel; private set => Set(ref activeTaskLabel, value); }
     public string? Error { get => error; private set => Set(ref error, value); }
     public int Percentage { get => percentage; private set => Set(ref percentage, value); }
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -258,12 +262,12 @@ public sealed class ImportTaskService(
 
     private async Task RunAsync(IMapProvider provider, int taskId, CancellationToken ct)
     {
-        IsRunning = true;
         Error = null;
         var mediaChanged = false;
         try
         {
             await UpdateTaskAsync(taskId, Running, null, ct: CancellationToken.None);
+            IsRunning = true;
             await using var db = await factory.CreateDbContextAsync(ct);
             var task = await db.DownloadTasks.AsNoTracking().FirstAsync(x => x.Id == taskId, ct);
             var plan = await BuildPlanAsync(db, task, ct);
@@ -288,12 +292,15 @@ public sealed class ImportTaskService(
                 {
                     failed++;
                     Error = $"Media download timed out after 30 seconds: {media.SourceUrl ?? media.RelativePath}";
+                    await appLogs.WriteAsync("Download.Media", "Warning", Error, $"TaskId: {taskId}\nMediaId: {media.Id}");
                 }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex)
                 {
                     failed++;
-                    Error = $"Media download failed for {media.RelativePath}: {ex.Message}. HTTP details: {Path.Combine(settings.Current.DataDirectory, "download-http.log")}";
+                    Error = $"Media download failed for {media.RelativePath}: {ex.Message}";
+                    await appLogs.WriteAsync("Download.Media", "Error", Error,
+                        $"TaskId: {taskId}\nMediaId: {media.Id}\n{ex}");
                 }
                 await UpdateProgressAsync(taskId, completed, plan.Total, failed,
                     $"Downloading media: {completed} complete, {failed} failed, {plan.Total} total", ct,
@@ -320,14 +327,24 @@ public sealed class ImportTaskService(
                 {
                     failed++;
                     Error = $"Tile download timed out after 30 seconds: {tile.Url}";
+                    await appLogs.WriteAsync("Download.Tile", "Warning", Error, $"TaskId: {taskId}");
                 }
                 catch (OperationCanceledException) { throw; }
-                catch (Exception ex) { failed++; Error = $"Tile download failed: {ex.Message}"; }
+                catch (Exception ex)
+                {
+                    failed++;
+                    Error = $"Tile download failed: {ex.Message}";
+                    await appLogs.WriteAsync("Download.Tile", "Error", Error,
+                        $"TaskId: {taskId}\nUrl: {tile.Url}\n{ex}");
+                }
                 await UpdateProgressAsync(taskId, completed, plan.Total, failed,
                     $"Downloading tiles: {completed} complete, {failed} failed, {plan.Total} total", ct,
                     force: false);
             }
 
+            await UpdateProgressAsync(taskId, completed, plan.Total, failed,
+                failed > 0 ? "Offline download finished with missing items" : "Offline download complete",
+                CancellationToken.None, force: true);
             if (failed > 0)
                 await UpdateTaskAsync(taskId, Failed, $"{failed} item(s) could not be downloaded. Retry to attempt only missing items.", failed);
             else
@@ -340,6 +357,7 @@ public sealed class ImportTaskService(
         catch (Exception ex)
         {
             await UpdateTaskAsync(taskId, Failed, ex.Message);
+            await appLogs.WriteAsync("Download.Task", "Error", ex.Message, $"TaskId: {taskId}\n{ex}");
         }
         finally
         {
@@ -462,6 +480,7 @@ public sealed class ImportTaskService(
 
     private void Apply(DownloadTask task)
     {
+        ActiveTaskLabel = $"{task.MapDisplayName} · {task.DownloadKinds}";
         Error = task.Error;
         Percentage = task.Percentage;
         Status = task.Status switch

@@ -1,1 +1,65 @@
-<Window x:Class="MapCorleon.Dialogs.LocationEditorDialog" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Custom Location" Width="600" Height="680" ResizeMode="NoResize" WindowStartupLocation="CenterOwner"><Grid Margin="20"><Grid.RowDefinitions><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel><TextBlock Text="Title"/><TextBox x:Name="TitleBox"/><TextBlock Text="Description (Markdown and links supported)"/><TextBox x:Name="DescriptionBox" Height="140" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/><TextBlock Text="Category"/><ComboBox x:Name="CategoryBox" DisplayMemberPath="Name"/><TextBlock Text="Images"/><ListBox x:Name="ImagesBox" Height="100"/><Button Content="Add multiple images…" HorizontalAlignment="Left" Click="Images_Click"/><TextBlock Text="Coordinates" Margin="3,8,3,0"/><UniformGrid Columns="2"><StackPanel><TextBlock Text="Latitude"/><TextBox x:Name="LatitudeBox"/></StackPanel><StackPanel><TextBlock Text="Longitude"/><TextBox x:Name="LongitudeBox"/></StackPanel></UniformGrid><Button Content="◎  Pick position on map" Click="PickOnMap_Click" Background="#315B9C" Padding="12,10"/><TextBlock Text="This location belongs to the active timeline. The editor will hide while you pick its map position." Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="3"/></StackPanel><DockPanel Grid.Row="1"><Button x:Name="DeleteButton" DockPanel.Dock="Left" Content="Delete location" Click="Delete_Click" Background="#6B2630" Visibility="Collapsed"/><StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><Button Content="Cancel" Click="Cancel_Click"/><Button Content="Save" Click="Save_Click"/></StackPanel></DockPanel></Grid></Window>
+<Window x:Class="MapCorleon.Dialogs.LocationEditorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Custom Location" Width="600" Height="720" MinHeight="620"
+        ResizeMode="CanResize" WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <Style x:Key="FieldLabel" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
+      <Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="3,0,3,5"/>
+    </Style>
+    <Style x:Key="FieldBlock" TargetType="StackPanel"><Setter Property="Margin" Value="0,0,0,16"/></Style>
+  </Window.Resources>
+  <Grid Margin="20">
+    <Grid.RowDefinitions><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="0,0,8,4">
+        <StackPanel Style="{StaticResource FieldBlock}">
+          <TextBlock Text="TITLE" Style="{StaticResource FieldLabel}"/>
+          <TextBox x:Name="TitleBox"/>
+        </StackPanel>
+
+        <StackPanel Style="{StaticResource FieldBlock}">
+          <TextBlock Text="DESCRIPTION" Style="{StaticResource FieldLabel}"/>
+          <TextBox x:Name="DescriptionBox" Height="140" AcceptsReturn="True" TextWrapping="Wrap"
+                   VerticalScrollBarVisibility="Auto"/>
+          <TextBlock Text="Markdown and links are supported." Foreground="{StaticResource MutedTextBrush}"
+                     FontSize="11" Margin="4,5,4,0"/>
+        </StackPanel>
+
+        <StackPanel Style="{StaticResource FieldBlock}">
+          <TextBlock Text="CATEGORY" Style="{StaticResource FieldLabel}"/>
+          <ComboBox x:Name="CategoryBox" DisplayMemberPath="Name"/>
+        </StackPanel>
+
+        <StackPanel Style="{StaticResource FieldBlock}">
+          <TextBlock Text="IMAGES" Style="{StaticResource FieldLabel}"/>
+          <ListBox x:Name="ImagesBox" Height="92" Margin="3,0,3,8"/>
+          <Button Content="Add multiple images…" HorizontalAlignment="Left" Click="Images_Click"/>
+        </StackPanel>
+
+        <StackPanel Style="{StaticResource FieldBlock}">
+          <TextBlock Text="COORDINATES" Style="{StaticResource FieldLabel}"/>
+          <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
+            <StackPanel><TextBlock Text="Latitude" Margin="3,0,3,4"/><TextBox x:Name="LatitudeBox"/></StackPanel>
+            <StackPanel Grid.Column="2"><TextBlock Text="Longitude" Margin="3,0,3,4"/><TextBox x:Name="LongitudeBox"/></StackPanel>
+          </Grid>
+          <Button Content="◎  Pick position on map" Click="PickOnMap_Click" Background="#315B9C" Padding="12,10"/>
+          <TextBlock Text="The editor hides while you choose the position on the active map."
+                     Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="4,6,4,0"/>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,8,0,0">
+      <DockPanel>
+        <Button x:Name="DeleteButton" DockPanel.Dock="Left" Content="Delete location" Click="Delete_Click"
+                Background="#6B2630" Visibility="Collapsed"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+          <Button Content="Cancel" Click="Cancel_Click"/><Button Content="Save" Click="Save_Click" Background="#315B9C"/>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+  </Grid>
+</Window>

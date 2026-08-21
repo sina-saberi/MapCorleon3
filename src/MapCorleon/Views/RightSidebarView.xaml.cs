@@ -13,7 +13,9 @@ namespace MapCorleon.Views;
 
 public partial class RightSidebarView : UserControl
 {
-    private static readonly Regex Links = new(@"\[(?<label>[^\]]+)\]\((?<url>[^)]+)\)|\[(?<bracket>https?://[^\]]+|mapcorleon://[^\]]+)\]|(?<bare>https?://\S+|mapcorleon://\S+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex MarkdownTokens = new(
+        @"\*\*(?<bold>.+?)\*\*|\[(?<label>[^\]]+)\]\((?<url>[^)]+)\)|\[(?<bracket>https?://[^\]]+|mapcorleon://[^\]]+)\]|(?<bare>https?://\S+|mapcorleon://\S+)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
     private Media? selectedMedia;
     private CancellationTokenSource? previewCancellation;
 
@@ -48,9 +50,15 @@ public partial class RightSidebarView : UserControl
     {
         DescriptionText.Inlines.Clear();
         var position = 0;
-        foreach (Match match in Links.Matches(markdown))
+        foreach (Match match in MarkdownTokens.Matches(markdown))
         {
-            if (match.Index > position) DescriptionText.Inlines.Add(new Run(markdown[position..match.Index]));
+            if (match.Index > position) AddPlainText(markdown[position..match.Index]);
+            if (match.Groups["bold"].Success)
+            {
+                DescriptionText.Inlines.Add(new Run(match.Groups["bold"].Value) { FontWeight = FontWeights.SemiBold });
+                position = match.Index + match.Length;
+                continue;
+            }
             var url = match.Groups["url"].Success ? match.Groups["url"].Value : match.Groups["bracket"].Success ? match.Groups["bracket"].Value : match.Groups["bare"].Value.TrimEnd('.', ',', ';');
             var label = match.Groups["label"].Success ? match.Groups["label"].Value : InternalTitle(url) ?? url;
             var link = new Hyperlink(new Run(label)) { Foreground = new SolidColorBrush(Color.FromRgb(107, 164, 255)), Tag = url, ToolTip = InternalTitle(url) is null ? url : "Open this location" };
@@ -58,7 +66,17 @@ public partial class RightSidebarView : UserControl
             DescriptionText.Inlines.Add(link);
             position = match.Index + match.Length;
         }
-        if (position < markdown.Length) DescriptionText.Inlines.Add(new Run(markdown[position..]));
+        if (position < markdown.Length) AddPlainText(markdown[position..]);
+    }
+
+    private void AddPlainText(string text)
+    {
+        var lines = text.Replace("\r\n", "\n").Split('\n');
+        for (var index = 0; index < lines.Length; index++)
+        {
+            if (index > 0) DescriptionText.Inlines.Add(new LineBreak());
+            if (lines[index].Length > 0) DescriptionText.Inlines.Add(new Run(lines[index]));
+        }
     }
 
     private static string? InternalTitle(string url) => Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == "mapcorleon" ? "View referenced location" : null;

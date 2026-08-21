@@ -6,7 +6,6 @@
   <DockPanel Margin="16">
     <DockPanel DockPanel.Dock="Top" Margin="3,0,3,12">
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-        <Button Content="Open HTTP log" Click="OpenLog_Click"/>
         <Button Content="Refresh" Click="Refresh_Click"/>
       </StackPanel>
       <StackPanel>
@@ -17,24 +16,25 @@
     </DockPanel>
     <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}"
             BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4"
-            Padding="12" Margin="3,0,3,12">
+            Padding="10" Margin="3,0,3,12">
       <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
           <ColumnDefinition/>
           <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <StackPanel>
-          <TextBlock Text="ADD AN IMPORTED MAP" Foreground="{StaticResource MutedTextBrush}" FontSize="11"/>
-          <ComboBox x:Name="MapBox" DisplayMemberPath="DisplayName" MinWidth="300" Margin="0,5,12,7"/>
-          <StackPanel Orientation="Horizontal">
-            <CheckBox x:Name="AddMedia" Content="Media" IsChecked="True" Margin="2,2,18,2"/>
-            <CheckBox x:Name="AddTiles" Content="Tiles" Margin="2"/>
-          </StackPanel>
-          <TextBlock x:Name="AddStatus" Foreground="{StaticResource MutedTextBrush}"
-                     TextWrapping="Wrap" Margin="0,7,12,0"/>
+        <ComboBox x:Name="MapBox" MinWidth="300" Margin="0,0,10,0">
+          <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/></DataTemplate></ComboBox.ItemTemplate>
+        </ComboBox>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+          <CheckBox x:Name="AddMedia" Content="Media" IsChecked="True" Margin="2,0,14,0"/>
+          <CheckBox x:Name="AddTiles" Content="Tiles" Margin="2,0"/>
         </StackPanel>
-        <Button x:Name="AddButton" Grid.Column="1" Content="Add to queue" Click="AddTask_Click"
-                VerticalAlignment="Center" MinWidth="110"/>
+        <Button x:Name="AddButton" Grid.Column="2" Content="Add to queue" Click="AddTask_Click"
+                VerticalAlignment="Stretch" Margin="0" MinWidth="110"/>
+        <TextBlock x:Name="AddStatus" Grid.Row="1" Grid.ColumnSpan="3" Foreground="{StaticResource MutedTextBrush}"
+                   TextWrapping="Wrap" Margin="0,7,0,0" Visibility="Collapsed"/>
       </Grid>
     </Border>
     <Button DockPanel.Dock="Bottom" Content="Close" IsCancel="True" HorizontalAlignment="Right" Margin="3,12,3,3"/>
@@ -70,6 +70,7 @@
               </StackPanel>
               <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                 <Button Content="{Binding ActionText, Mode=OneWay}" IsEnabled="{Binding CanAct, Mode=OneWay}"
+                        Visibility="{Binding CanAct,Converter={StaticResource BoolToVisibility}}"
                         Tag="{Binding Id, Mode=OneWay}" Click="TaskAction_Click" MinWidth="88"/>
                 <Button Content="Cancel &amp; remove" Tag="{Binding Id, Mode=OneWay}"
                         Click="CancelTask_Click" Background="#6B2630"/>

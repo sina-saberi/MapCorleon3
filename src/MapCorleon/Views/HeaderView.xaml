@@ -5,7 +5,7 @@
     <DockPanel>
       <TextBlock Text="MapCorleon" Foreground="White" FontSize="23" FontWeight="SemiBold" VerticalAlignment="Center"/>
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-        <StackPanel x:Name="TaskPanel" Width="280" Margin="6,0,12,0" VerticalAlignment="Center" Visibility="Collapsed">
+        <StackPanel x:Name="TaskPanel" Width="210" Margin="6,0,12,0" VerticalAlignment="Center" Visibility="Collapsed">
           <TextBlock x:Name="TaskText" Foreground="#D9E4F2" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
           <ProgressBar x:Name="TaskProgress" Minimum="0" Maximum="100" Height="5" Margin="0,4,0,0"/>
         </StackPanel>

@@ -5,14 +5,11 @@ using System.Net;
 using System.IO;
 using System.Diagnostics;
 using MapCorleon.Contracts;
-using Microsoft.Extensions.Logging;
 
 namespace MapCorleon.Services;
 
-public sealed class ProviderStorage(ISettingsService settings, HttpClient http, ILogger<ProviderStorage> logger) : IProviderStorage
+public sealed class ProviderStorage(ISettingsService settings, HttpClient http, IAppLogService appLogs) : IProviderStorage
 {
-    private static readonly SemaphoreSlim LogLock = new(1, 1);
-    public string DiagnosticLogPath => Path.Combine(settings.Current.DataDirectory, "download-http.log");
     public async Task<StoredAsset> CacheAsync(string provider, string kind, string source, string? preferredFileName = null,
         CancellationToken ct = default, string? referrer = null)
     {
@@ -107,15 +104,11 @@ public sealed class ProviderStorage(ISettingsService settings, HttpClient http, 
         output.AppendLine(new string('-', 80));
 
         Trace.Write(output.ToString());
-        logger.LogWarning("Media HTTP failure:\n{HttpDiagnostic}", output.ToString());
-
-        await LogLock.WaitAsync(ct);
-        try
-        {
-            Directory.CreateDirectory(settings.Current.DataDirectory);
-            await File.AppendAllTextAsync(DiagnosticLogPath, output.ToString(), ct);
-        }
-        finally { LogLock.Release(); }
+        await appLogs.WriteAsync(
+            "Download.Http",
+            "Warning",
+            $"{(int)response.StatusCode} {response.ReasonPhrase}: {source}",
+            output.ToString());
     }
 
     private void WriteRequestLog(string source, string referrer, HttpRequestMessage request)

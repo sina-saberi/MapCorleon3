@@ -1,7 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Diagnostics;
-using System.IO;
 using MapCorleon.Services;
 using MapCorleon.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,14 +52,14 @@ public partial class DownloadTasksDialog : Window
     {
         if (MapBox.SelectedItem is not Map map)
         {
-            AddStatus.Text = "Select an imported map.";
+            ShowAddStatus("Select an imported map.");
             return;
         }
         var media = AddMedia.IsChecked == true;
         var tiles = AddTiles.IsChecked == true;
         if (!media && !tiles)
         {
-            AddStatus.Text = "Select media, tiles, or both.";
+            ShowAddStatus("Select media, tiles, or both.");
             return;
         }
 
@@ -69,29 +67,22 @@ public partial class DownloadTasksDialog : Window
         try
         {
             var count = await tasks.EnqueueAsync(map.Id, media, tiles);
-            AddStatus.Text = count == 1
+            ShowAddStatus(count == 1
                 ? "Added 1 separate download item."
-                : $"Added {count} separate download items.";
+                : $"Added {count} separate download items.");
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            AddStatus.Text = $"Could not add download: {ex.Message}";
+            ShowAddStatus($"Could not add download: {ex.Message}");
         }
         finally { AddButton.IsEnabled = true; }
     }
-    private void OpenLog_Click(object sender, RoutedEventArgs e)
+    private void ShowAddStatus(string text)
     {
-        var settings = App.Services.GetRequiredService<ISettingsService>();
-        var path = Path.Combine(settings.Current.DataDirectory, "download-http.log");
-        if (!File.Exists(path))
-        {
-            MessageBox.Show(this, "No HTTP download attempts have been logged yet.", "Download HTTP log");
-            return;
-        }
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        AddStatus.Text = text;
+        AddStatus.Visibility = Visibility.Visible;
     }
-
     private async Task ReloadAsync()
     {
         if (reloading) { reloadPending = true; return; }

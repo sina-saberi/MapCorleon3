@@ -38,8 +38,8 @@ public partial class HeaderView : UserControl
     private void RefreshTask()
     {
         ImportButton.IsEnabled = true;
-        TaskPanel.Visibility = tasks.IsRunning || !string.IsNullOrWhiteSpace(tasks.Status) ? Visibility.Visible : Visibility.Collapsed;
-        TaskText.Text = tasks.Status;
+        TaskPanel.Visibility = tasks.IsRunning ? Visibility.Visible : Visibility.Collapsed;
+        TaskText.Text = tasks.ActiveTaskLabel;
         TaskProgress.Value = tasks.Percentage;
     }
     private void Settings_Click(object sender, RoutedEventArgs e) => new SettingsDialog { Owner = Owner }.ShowDialog();
