@@ -63,7 +63,7 @@
               <TextBlock Text="{Binding Category.Name}" Foreground="#9FC5FF" FontSize="12"/>
             </Border>
 
-            <Border Style="{StaticResource Card}">
+            <Border Style="{StaticResource Card}" Visibility="{Binding HasDescription,Converter={StaticResource BoolToVisibility}}">
               <StackPanel><TextBlock Text="DETAILS" Style="{StaticResource SectionLabel}"/>
                 <TextBlock x:Name="DescriptionText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"
                            LineHeight="21" Foreground="#D8E0EA"/>

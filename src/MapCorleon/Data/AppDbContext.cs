@@ -9,6 +9,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     {
         b.Entity<Game>().ToTable("Games"); b.Entity<Map>().ToTable("Maps"); b.Entity<MapConfig>().ToTable("Map Config"); b.Entity<Group>().ToTable("Groups"); b.Entity<Category>().ToTable("Categories"); b.Entity<Location>().ToTable("Locations"); b.Entity<Media>().ToTable("Media"); b.Entity<Timeline>().ToTable("Timelines"); b.Entity<Pin>().ToTable("Pins"); b.Entity<MarkedLocation>().ToTable("Marked Locations"); b.Entity<DownloadTask>().ToTable("Download Tasks"); b.Entity<AppLog>().ToTable("Application Logs");
         b.Entity<Category>().Ignore(x => x.TotalLocationCount).Ignore(x => x.PickedLocationCount).Ignore(x => x.ProgressText);
+        b.Entity<Location>().Ignore(x => x.HasDescription);
         b.Entity<DownloadTask>().Ignore(x => x.Percentage).Ignore(x => x.MapDisplayName).Ignore(x => x.DownloadKinds)
             .Ignore(x => x.ProgressText).Ignore(x => x.CanAct).Ignore(x => x.ActionText);
         b.Entity<Map>().HasOne(x => x.Game).WithMany(x => x.Maps).HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.Cascade);

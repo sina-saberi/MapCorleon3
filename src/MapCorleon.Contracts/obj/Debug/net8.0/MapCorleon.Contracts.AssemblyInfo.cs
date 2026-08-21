@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MapCorleon")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.1.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.1+b2624a8896775fde48ad0bf897de3024589a3c5e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.1+ba988fe5c2a95d586742c58c19f9a6b0cc5094ad")]
 [assembly: System.Reflection.AssemblyProductAttribute("MapCorleon")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MapCorleon.Contracts")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.1.0")]

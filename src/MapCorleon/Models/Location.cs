@@ -11,6 +11,7 @@ public sealed class Location : IEntity
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public bool IsCustom { get; set; }
+    public bool HasDescription => !string.IsNullOrWhiteSpace(DescriptionMarkdown);
 
     public Category? Category { get; set; }
     public Timeline? Timeline { get; set; }
