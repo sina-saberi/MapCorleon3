@@ -72,8 +72,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS "IX_Marked_Locations_TimelineId_LocationId" ON
             ("Map Config", "Provider", "TEXT NOT NULL DEFAULT 'mapgenie'"),
             ("Map Config", "TileBoundsJson", "TEXT NULL"),
             ("Map Config", "MinZoom", "INTEGER NULL"), ("Map Config", "MaxZoom", "INTEGER NULL"),
-            ("Map Config", "SpriteImagePath", "TEXT NULL")
-            ,("Download Tasks", "SourcePageUrl", "TEXT NULL")
+            ("Map Config", "SpriteImagePath", "TEXT NULL"),
+            ("Map Config", "LaunchExecutablePath", "TEXT NULL"),
+            ("Map Config", "LaunchArguments", "TEXT NULL"),
+            ("Map Config", "LaunchWorkingDirectory", "TEXT NULL"),
+            ("Download Tasks", "SourcePageUrl", "TEXT NULL")
         };
         foreach (var column in columns)
         {
@@ -102,7 +105,7 @@ UPDATE "Media" SET "SourceUrl"="RelativePath" WHERE "SourceUrl" IS NULL AND ("Re
     private const string SchemaSql = """
 CREATE TABLE IF NOT EXISTS "Games" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Games" PRIMARY KEY AUTOINCREMENT, "Name" TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS "Maps" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Maps" PRIMARY KEY AUTOINCREMENT, "GameId" INTEGER NOT NULL, "Name" TEXT NOT NULL, CONSTRAINT "FK_Maps_Games_GameId" FOREIGN KEY ("GameId") REFERENCES "Games" ("Id") ON DELETE CASCADE);
-CREATE TABLE IF NOT EXISTS "Map Config" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Map_Config" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "MinLatitude" REAL NOT NULL, "MaxLatitude" REAL NOT NULL, "MinLongitude" REAL NOT NULL, "MaxLongitude" REAL NOT NULL, "DefaultZoom" REAL NOT NULL, CONSTRAINT "FK_Map_Config_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS "Map Config" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Map_Config" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "MinLatitude" REAL NOT NULL, "MaxLatitude" REAL NOT NULL, "MinLongitude" REAL NOT NULL, "MaxLongitude" REAL NOT NULL, "DefaultZoom" REAL NOT NULL, "LaunchExecutablePath" TEXT NULL, "LaunchArguments" TEXT NULL, "LaunchWorkingDirectory" TEXT NULL, CONSTRAINT "FK_Map_Config_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS "Groups" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Groups" PRIMARY KEY AUTOINCREMENT, "MapId" INTEGER NOT NULL, "Name" TEXT NOT NULL, "IsVisible" INTEGER NOT NULL DEFAULT 1, CONSTRAINT "FK_Groups_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS "Categories" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Categories" PRIMARY KEY AUTOINCREMENT, "GroupId" INTEGER NOT NULL, "Name" TEXT NOT NULL, "IsVisible" INTEGER NOT NULL DEFAULT 1, CONSTRAINT "FK_Categories_Groups_GroupId" FOREIGN KEY ("GroupId") REFERENCES "Groups" ("Id") ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS "Locations" ("Id" INTEGER NOT NULL CONSTRAINT "PK_Locations" PRIMARY KEY AUTOINCREMENT, "CategoryId" INTEGER NOT NULL, "TimelineId" INTEGER NULL, "Title" TEXT NOT NULL, "DescriptionMarkdown" TEXT NOT NULL DEFAULT '', "Latitude" REAL NOT NULL, "Longitude" REAL NOT NULL, "IsCustom" INTEGER NOT NULL DEFAULT 0, CONSTRAINT "FK_Locations_Categories_CategoryId" FOREIGN KEY ("CategoryId") REFERENCES "Categories" ("Id") ON DELETE CASCADE, CONSTRAINT "FK_Locations_Timelines_TimelineId" FOREIGN KEY ("TimelineId") REFERENCES "Timelines" ("Id") ON DELETE CASCADE);

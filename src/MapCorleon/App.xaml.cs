@@ -33,6 +33,15 @@ public partial class App : Application
         services.AddSingleton<ITileCacheService, TileCacheService>();
         services.AddSingleton<IProviderStorage, ProviderStorage>();
         services.AddSingleton<IAppLogService, AppLogService>();
+        services.AddSingleton<IGameProcessDetector, WindowsGameProcessDetector>();
+        services.AddSingleton<IProcessMemoryReader, WindowsProcessMemoryReader>();
+        services.AddSingleton<IProcessStarter, SystemProcessStarter>();
+        services.AddSingleton<IGameLauncher, SkyrimGameLauncher>();
+        services.AddSingleton<IPlayerLocationProvider, SkyrimPlayerLocationProvider>();
+        services.AddSingleton<PlayerLocationCoordinator>();
+        services.AddSingleton<IPlayerLocationCoordinator>(provider => provider.GetRequiredService<PlayerLocationCoordinator>());
+        services.AddHostedService(provider => provider.GetRequiredService<PlayerLocationCoordinator>());
+        services.AddSingleton<IMapSettingsService, MapSettingsService>();
         services.AddSingleton<IMediaDownloadService, MediaDownloadService>();
         services.AddSingleton<IMapImportSink, EfMapImportSink>();
         services.AddSingleton<IMapProvider, MapGenieProvider>();

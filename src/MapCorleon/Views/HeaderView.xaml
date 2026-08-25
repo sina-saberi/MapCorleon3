@@ -56,6 +56,11 @@
       </Border>
 
       <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+        <TextBlock Text="{Binding PlayerTrackingStatusText}" Foreground="#8FA3BD" FontSize="11"
+                   VerticalAlignment="Center" Margin="0,0,8,0"
+                   Visibility="{Binding IsPlayerTrackingSupported,Converter={StaticResource BoolToVisibility}}"/>
+        <Button Content="Launch game" Command="{Binding LaunchGameCommand}" Style="{StaticResource HeaderAction}"
+                Visibility="{Binding IsPlayerTrackingSupported,Converter={StaticResource BoolToVisibility}}"/>
         <Button Content="Maps &amp; timelines" Click="Timeline_Click" Style="{StaticResource HeaderAction}"/>
         <Button Content="Downloads" Click="Downloads_Click" Style="{StaticResource HeaderAction}"/>
         <Button x:Name="ImportButton" Content="Import map" Click="Import_Click" Style="{StaticResource HeaderAction}"/>

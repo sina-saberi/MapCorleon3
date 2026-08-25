@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -18,6 +19,8 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly IEventBus eventBus;
     private readonly ISettingsService settingsService;
     private readonly IImportTaskService importTasks;
+    private readonly IPlayerLocationCoordinator playerLocationCoordinator;
+    private readonly IGameLauncher gameLauncher;
     private readonly DispatcherTimer searchTimer;
 
     private List<Location> allLocations = [];
@@ -30,7 +33,16 @@ public sealed class ShellViewModel : ViewModelBase
     private Map? currentMap;
     private Timeline? selectedTimeline;
 
-    public ShellViewModel(AppDbContext db, ILocationService locationService, IFilterService filterService, ISearchService searchService, IEventBus eventBus, ISettingsService settingsService, IImportTaskService importTasks)
+    public ShellViewModel(
+        AppDbContext db,
+        ILocationService locationService,
+        IFilterService filterService,
+        ISearchService searchService,
+        IEventBus eventBus,
+        ISettingsService settingsService,
+        IImportTaskService importTasks,
+        IPlayerLocationCoordinator playerLocationCoordinator,
+        IGameLauncher gameLauncher)
     {
         this.db = db;
         this.locationService = locationService;
@@ -39,7 +51,10 @@ public sealed class ShellViewModel : ViewModelBase
         this.eventBus = eventBus;
         this.settingsService = settingsService;
         this.importTasks = importTasks;
+        this.playerLocationCoordinator = playerLocationCoordinator;
+        this.gameLauncher = gameLauncher;
         importTasks.MediaDownloaded += MediaDownloaded;
+        playerLocationCoordinator.PropertyChanged += PlayerLocationCoordinatorChanged;
 
         markFilter = settingsService.Current.Filter;
         searchTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
@@ -55,6 +70,7 @@ public sealed class ShellViewModel : ViewModelBase
         SelectCommand = new RelayCommand(location => SelectedLocation = location as Location);
         ToggleMarkCommand = new AsyncCommand(ToggleMarkAsync, () => SelectedLocation is not null);
         ReloadCommand = new AsyncCommand(() => LoadAsync(currentMapName));
+        LaunchGameCommand = new RelayCommand(_ => LaunchGame(), _ => CanLaunchGame);
         ToggleCategoryCommand = new RelayCommand(category =>
         {
             if (category is Category value)
@@ -79,6 +95,7 @@ public sealed class ShellViewModel : ViewModelBase
     public ICommand SelectCommand { get; }
     public ICommand ToggleMarkCommand { get; }
     public ICommand ReloadCommand { get; }
+    public ICommand LaunchGameCommand { get; }
     public ICommand ToggleCategoryCommand { get; }
     public ICommand ToggleGroupCommand { get; }
 
@@ -106,6 +123,10 @@ public sealed class ShellViewModel : ViewModelBase
     public string ProgressText => $"{PickedCount} locations picked from {TotalCount} total";
     public string ProgressSummary => $"{PickedCount:N0} of {TotalCount:N0} marked";
     public int ProgressPercentage => TotalCount == 0 ? 0 : (int)Math.Round(PickedCount * 100d / TotalCount);
+    public PlayerLocation? LivePlayerLocation => playerLocationCoordinator.CurrentLocation;
+    public string PlayerTrackingStatusText => playerLocationCoordinator.StatusText;
+    public bool IsPlayerTrackingSupported => CurrentMap is not null && playerLocationCoordinator.Supports(CurrentMap);
+    public bool CanLaunchGame => IsPlayerTrackingSupported;
 
     public bool IsLoading
     {
@@ -116,7 +137,13 @@ public sealed class ShellViewModel : ViewModelBase
     public Map? CurrentMap
     {
         get => currentMap;
-        private set => Set(ref currentMap, value);
+        private set
+        {
+            if (!Set(ref currentMap, value)) return;
+            OnPropertyChanged(nameof(IsPlayerTrackingSupported));
+            OnPropertyChanged(nameof(CanLaunchGame));
+            ((RelayCommand)LaunchGameCommand).RaiseCanExecuteChanged();
+        }
     }
 
     public MapConfig? CurrentMapConfig
@@ -172,7 +199,11 @@ public sealed class ShellViewModel : ViewModelBase
                 .ToListAsync();
 
             ReplaceCollection(Maps, maps);
-            if (maps.Count == 0) return;
+            if (maps.Count == 0)
+            {
+                await playerLocationCoordinator.SetActiveMapAsync(null);
+                return;
+            }
 
             var wantedMap = preferredMapName ?? settingsService.Current.CurrentMapName;
             var map = maps.FirstOrDefault(item => item.Name == wantedMap) ?? maps[0];
@@ -181,6 +212,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(CurrentMapName));
             CurrentMap = map;
             CurrentMapConfig = map.Config;
+            await playerLocationCoordinator.SetActiveMapAsync(map);
 
             await LoadGroupsAsync(map.Id);
             await LoadTimelinesAsync(map.Id);
@@ -305,6 +337,28 @@ public sealed class ShellViewModel : ViewModelBase
 
     private void MediaDownloaded(object? sender, EventArgs e) =>
         Application.Current.Dispatcher.InvokeAsync(ReloadMediaAsync);
+
+    private void PlayerLocationCoordinatorChanged(object? sender, PropertyChangedEventArgs e) =>
+        Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            if (e.PropertyName == nameof(IPlayerLocationCoordinator.CurrentLocation))
+                OnPropertyChanged(nameof(LivePlayerLocation));
+            else if (e.PropertyName == nameof(IPlayerLocationCoordinator.StatusText))
+                OnPropertyChanged(nameof(PlayerTrackingStatusText));
+        });
+
+    private void LaunchGame()
+    {
+        var config = CurrentMapConfig;
+        var launchSettings = config is null
+            ? null
+            : new GameLaunchSettings(config.LaunchExecutablePath, config.LaunchArguments, config.LaunchWorkingDirectory);
+        var result = gameLauncher.Launch(launchSettings);
+        if (result.Status == GameLaunchStatus.Started)
+            playerLocationCoordinator.NotifyGameStarting();
+        else if (result.Status != GameLaunchStatus.AlreadyRunning)
+            MessageBox.Show(result.Message, "Launch game", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
 
     private async Task ReloadMediaAsync()
     {

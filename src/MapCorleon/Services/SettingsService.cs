@@ -27,7 +27,7 @@ public sealed class JsonSettingsService : ISettingsService
 
     public async Task SaveAsync(AppSettings settings)
     {
-        settings = settings with { DataDirectory = Path.GetFullPath(settings.DataDirectory.Trim()) };
+        settings = Normalize(settings);
         EnsureDirectories(settings);
         Current = settings;
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -42,7 +42,7 @@ public sealed class JsonSettingsService : ISettingsService
             using var document = JsonDocument.Parse(File.ReadAllText(path));
             var root = document.RootElement;
             if (root.TryGetProperty(nameof(AppSettings.DataDirectory), out _))
-                return JsonSerializer.Deserialize<AppSettings>(root.GetRawText()) ?? AppSettings.Default;
+                return Normalize(JsonSerializer.Deserialize<AppSettings>(root.GetRawText()) ?? AppSettings.Default);
 
             // Migrate the former three-directory settings. DatabaseDirectory is the
             // closest equivalent to the new common data root.
@@ -60,9 +60,9 @@ public sealed class JsonSettingsService : ISettingsService
                             timelineValue.ValueKind == JsonValueKind.Number
                 ? timelineValue.GetInt32()
                 : null;
-            return new AppSettings(
+            return Normalize(new AppSettings(
                 string.IsNullOrWhiteSpace(legacyRoot) ? AppSettings.Default.DataDirectory : legacyRoot,
-                filter, visibility, map, timeline);
+                filter, visibility, map, timeline));
         }
         catch { return AppSettings.Default; }
     }
@@ -73,4 +73,9 @@ public sealed class JsonSettingsService : ISettingsService
         Directory.CreateDirectory(settings.StorageDirectory);
         Directory.CreateDirectory(settings.TileDirectory);
     }
+
+    private static AppSettings Normalize(AppSettings settings) => settings with
+    {
+        DataDirectory = Path.GetFullPath(settings.DataDirectory.Trim())
+    };
 }
