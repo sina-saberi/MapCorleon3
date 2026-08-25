@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using MapCorleon.Contracts;
 using MapCorleon.Data;
 using MapCorleon.Models;
 using MapCorleon.Services;
@@ -20,7 +21,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly ISettingsService settingsService;
     private readonly IImportTaskService importTasks;
     private readonly IPlayerLocationCoordinator playerLocationCoordinator;
-    private readonly IGameLauncher gameLauncher;
+    private readonly IReadOnlyList<IGameLauncher> gameLaunchers;
     private readonly DispatcherTimer searchTimer;
 
     private List<Location> allLocations = [];
@@ -42,7 +43,7 @@ public sealed class ShellViewModel : ViewModelBase
         ISettingsService settingsService,
         IImportTaskService importTasks,
         IPlayerLocationCoordinator playerLocationCoordinator,
-        IGameLauncher gameLauncher)
+        IEnumerable<IGameLauncher> gameLaunchers)
     {
         this.db = db;
         this.locationService = locationService;
@@ -52,7 +53,7 @@ public sealed class ShellViewModel : ViewModelBase
         this.settingsService = settingsService;
         this.importTasks = importTasks;
         this.playerLocationCoordinator = playerLocationCoordinator;
-        this.gameLauncher = gameLauncher;
+        this.gameLaunchers = gameLaunchers.ToList();
         importTasks.MediaDownloaded += MediaDownloaded;
         playerLocationCoordinator.PropertyChanged += PlayerLocationCoordinatorChanged;
 
@@ -126,7 +127,11 @@ public sealed class ShellViewModel : ViewModelBase
     public PlayerLocation? LivePlayerLocation => playerLocationCoordinator.CurrentLocation;
     public string PlayerTrackingStatusText => playerLocationCoordinator.StatusText;
     public bool IsPlayerTrackingSupported => CurrentMap is not null && playerLocationCoordinator.Supports(CurrentMap);
-    public bool CanLaunchGame => IsPlayerTrackingSupported;
+    public bool CanLaunchGame => IsPlayerTrackingSupported && CurrentGameLauncher is not null;
+
+    private IGameLauncher? CurrentGameLauncher => CurrentMap is null
+        ? null
+        : gameLaunchers.FirstOrDefault(launcher => launcher.Supports(GameMapDescriptorFactory.Create(CurrentMap)));
 
     public bool IsLoading
     {
@@ -349,11 +354,13 @@ public sealed class ShellViewModel : ViewModelBase
 
     private void LaunchGame()
     {
+        var launcher = CurrentGameLauncher;
+        if (launcher is null) return;
         var config = CurrentMapConfig;
         var launchSettings = config is null
             ? null
             : new GameLaunchSettings(config.LaunchExecutablePath, config.LaunchArguments, config.LaunchWorkingDirectory);
-        var result = gameLauncher.Launch(launchSettings);
+        var result = launcher.Launch(launchSettings);
         if (result.Status == GameLaunchStatus.Started)
             playerLocationCoordinator.NotifyGameStarting();
         else if (result.Status != GameLaunchStatus.AlreadyRunning)

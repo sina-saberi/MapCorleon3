@@ -1,40 +1,20 @@
 using System.Diagnostics;
 using System.IO;
-using MapCorleon.Models;
+using MapCorleon.Contracts;
 
-namespace MapCorleon.Services;
+namespace MapCorleon.Games.Skyrim;
 
-public enum GameLaunchStatus
+public sealed class SkyrimGameLauncher(
+    IGameProcessDetector processDetector,
+    IProcessStarter processStarter) : IGameLauncher
 {
-    Started,
-    AlreadyRunning,
-    NotConfigured,
-    ExecutableNotFound,
-    Failed
-}
+    public string Key => "skyrim-se";
 
-public sealed record GameLaunchResult(GameLaunchStatus Status, string Message);
+    public bool Supports(GameMapDescriptor map) => SkyrimGameIdentity.IsSkyrim(map);
 
-public interface IProcessStarter
-{
-    Process? Start(ProcessStartInfo startInfo);
-}
-
-public sealed class SystemProcessStarter : IProcessStarter
-{
-    public Process? Start(ProcessStartInfo startInfo) => Process.Start(startInfo);
-}
-
-public interface IGameLauncher
-{
-    GameLaunchResult Launch(GameLaunchSettings? settings);
-}
-
-public sealed class SkyrimGameLauncher(IGameProcessDetector processDetector, IProcessStarter processStarter) : IGameLauncher
-{
     public GameLaunchResult Launch(GameLaunchSettings? settings)
     {
-        if (processDetector.IsRunning(SkyrimPlayerLocationProvider.TargetProcessName))
+        if (processDetector.IsRunning(SkyrimWorldMapPlayerLocationProvider.TargetProcessName))
             return new GameLaunchResult(GameLaunchStatus.AlreadyRunning, "Skyrim is already running.");
 
         var executable = settings?.ExecutablePath?.Trim();

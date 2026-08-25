@@ -1,18 +1,9 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using MapCorleon.Contracts;
 using Microsoft.Win32.SafeHandles;
 
 namespace MapCorleon.Services;
-
-public interface IProcessMemorySession : IDisposable
-{
-    float ReadSingle(nint address);
-}
-
-public interface IProcessMemoryReader
-{
-    IProcessMemorySession Open(int processId);
-}
 
 public sealed class WindowsProcessMemoryReader : IProcessMemoryReader
 {

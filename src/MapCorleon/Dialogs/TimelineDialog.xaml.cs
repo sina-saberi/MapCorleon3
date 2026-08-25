@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using MapCorleon.Contracts;
 using MapCorleon.Models;
 using MapCorleon.Services;
 using MapCorleon.ViewModels;
@@ -48,7 +49,7 @@ public partial class TimelineDialog : Window
 
     private void LoadMapSettings()
     {
-        if (MapBox.SelectedItem is not Map map || !playerLocations.Supports(map))
+        if (MapBox.SelectedItem is not Map map || playerLocations.GetProviderMetadata(map) is not { } metadata)
         {
             GameSettingsPanel.Visibility = Visibility.Collapsed;
             LaunchExecutableBox.Clear();
@@ -58,6 +59,8 @@ public partial class TimelineDialog : Window
         }
 
         GameSettingsPanel.Visibility = Visibility.Visible;
+        GameSettingsTitle.Text = metadata.SettingsTitle;
+        GameSettingsDescription.Text = metadata.SettingsDescription;
         LaunchExecutableBox.Text = map.Config?.LaunchExecutablePath ?? string.Empty;
         LaunchArgumentsBox.Text = map.Config?.LaunchArguments ?? string.Empty;
         LaunchWorkingDirectoryBox.Text = map.Config?.LaunchWorkingDirectory ?? string.Empty;

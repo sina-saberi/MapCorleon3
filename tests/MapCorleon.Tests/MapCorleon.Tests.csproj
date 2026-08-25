@@ -16,5 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MapCorleon\MapCorleon.csproj" />
+    <ProjectReference Include="..\..\src\MapCorleon.Games.Skyrim\MapCorleon.Games.Skyrim.csproj" />
   </ItemGroup>
 </Project>

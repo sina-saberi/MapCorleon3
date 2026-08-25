@@ -1,4 +1,5 @@
-using MapCorleon.Services;
+using MapCorleon.Contracts;
+using MapCorleon.Games.Skyrim;
 
 namespace MapCorleon.Tests;
 
@@ -7,7 +8,7 @@ public sealed class SkyrimMemoryProfileTests
     [Fact]
     public void CalculatesPositionAddressesFromModuleBase()
     {
-        var profile = SkyrimMemoryProfile.AnniversaryEdition1170;
+        var profile = SkyrimWorldMapMemoryProfile.AnniversaryEdition1170;
         var addresses = profile.GetPositionAddresses(nint.CreateChecked(0x140000000L));
 
         Assert.Equal(nint.CreateChecked(0x14338C8C0L), addresses.X);
@@ -20,7 +21,7 @@ public sealed class SkyrimMemoryProfileTests
     [InlineData("1.6.1170.0", true)]
     [InlineData("1.6.640.0", false)]
     public void MatchesOnlySupportedVersion(string version, bool expected) =>
-        Assert.Equal(expected, SkyrimMemoryProfile.AnniversaryEdition1170.SupportsVersion(version));
+        Assert.Equal(expected, SkyrimWorldMapMemoryProfile.AnniversaryEdition1170.SupportsVersion(version));
 
     [Theory]
     [InlineData(23259.77f, -44476.16f, 1.06624915463489, -1.06182578912831)]
@@ -32,11 +33,8 @@ public sealed class SkyrimMemoryProfileTests
         double expectedLatitude,
         double expectedLongitude)
     {
-        var mapConfig = new MapCorleon.Models.MapConfig();
-
-        var converted = SkyrimMemoryProfile.AnniversaryEdition1170.Calibration.TryConvert(
+        var converted = SkyrimWorldMapMemoryProfile.AnniversaryEdition1170.Calibration.TryConvert(
             new GamePosition(gameX, gameY, 0),
-            mapConfig,
             out var location);
 
         Assert.True(converted);

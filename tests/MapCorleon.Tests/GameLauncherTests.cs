@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using MapCorleon.Models;
-using MapCorleon.Services;
+using MapCorleon.Contracts;
+using MapCorleon.Games.Skyrim;
 
 namespace MapCorleon.Tests;
 

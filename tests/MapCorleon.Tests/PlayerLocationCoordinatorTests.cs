@@ -1,3 +1,4 @@
+using MapCorleon.Contracts;
 using MapCorleon.Models;
 using MapCorleon.Services;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -42,8 +43,9 @@ public sealed class PlayerLocationCoordinatorTests
         public int ReadCount { get; private set; }
         public int DetachCount { get; private set; }
         public string Key => "fake";
-        public bool Supports(Map map) => map.Game?.Name == "Skyrim" && map.Name == "Skyrim";
-        public Task<PlayerLocationReadResult> ReadAsync(Map map, CancellationToken ct)
+        public PlayerLocationProviderMetadata Metadata { get; } = new("FAKE", "Fake provider");
+        public bool Supports(GameMapDescriptor map) => map.GameName == "Skyrim" && map.MapName == "Skyrim";
+        public Task<PlayerLocationReadResult> ReadAsync(GameMapDescriptor map, CancellationToken ct)
         {
             ReadCount++;
             return Task.FromResult(new PlayerLocationReadResult(PlayerLocationReadStatus.GameNotRunning));

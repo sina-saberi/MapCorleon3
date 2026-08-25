@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Windows;
 using MapCorleon.Data;
 using MapCorleon.Contracts;
+using MapCorleon.Games.Skyrim;
 using MapCorleon.MapGenie;
 using MapCorleon.Services;
 using MapCorleon.ViewModels;
@@ -36,8 +37,7 @@ public partial class App : Application
         services.AddSingleton<IGameProcessDetector, WindowsGameProcessDetector>();
         services.AddSingleton<IProcessMemoryReader, WindowsProcessMemoryReader>();
         services.AddSingleton<IProcessStarter, SystemProcessStarter>();
-        services.AddSingleton<IGameLauncher, SkyrimGameLauncher>();
-        services.AddSingleton<IPlayerLocationProvider, SkyrimPlayerLocationProvider>();
+        services.AddSkyrimGame();
         services.AddSingleton<PlayerLocationCoordinator>();
         services.AddSingleton<IPlayerLocationCoordinator>(provider => provider.GetRequiredService<PlayerLocationCoordinator>());
         services.AddHostedService(provider => provider.GetRequiredService<PlayerLocationCoordinator>());

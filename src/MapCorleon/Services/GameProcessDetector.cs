@@ -1,18 +1,7 @@
 using System.Diagnostics;
+using MapCorleon.Contracts;
 
 namespace MapCorleon.Services;
-
-public sealed record GameProcessInfo(
-    int Id,
-    nint ModuleBaseAddress,
-    string ExecutablePath,
-    string FileVersion);
-
-public interface IGameProcessDetector
-{
-    GameProcessInfo? Find(string processName);
-    bool IsRunning(string processName);
-}
 
 public sealed class WindowsGameProcessDetector : IGameProcessDetector
 {

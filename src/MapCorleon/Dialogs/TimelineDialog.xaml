@@ -48,8 +48,8 @@
                          BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
                          CornerRadius="5" Padding="12" Margin="3,20,3,16" Visibility="Collapsed">
                     <StackPanel>
-                        <TextBlock Text="SKYRIM PLAYER TRACKING" Foreground="{StaticResource MutedTextBrush}" FontSize="11"/>
-                        <TextBlock Text="These launch settings belong only to the selected Skyrim map. Tracking always attaches to SkyrimSE.exe." Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,5,0,10"/>
+                        <TextBlock x:Name="GameSettingsTitle" Foreground="{StaticResource MutedTextBrush}" FontSize="11"/>
+                        <TextBlock x:Name="GameSettingsDescription" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,5,0,10"/>
                         <TextBlock Text="Launch executable"/>
                         <DockPanel Margin="0,4,0,8">
                             <Button DockPanel.Dock="Right" Content="Browse…" Click="BrowseExecutable_Click"/>

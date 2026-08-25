@@ -1,4 +1,5 @@
 using MapCorleon.Data;
+using MapCorleon.Contracts;
 using MapCorleon.Models;
 using Microsoft.EntityFrameworkCore;
 

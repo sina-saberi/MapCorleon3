@@ -1,5 +1,6 @@
+using MapCorleon.Contracts;
+using MapCorleon.Games.Skyrim;
 using MapCorleon.Models;
-using MapCorleon.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace MapCorleon.Tests;
@@ -14,13 +15,13 @@ public sealed class SkyrimPlayerLocationProviderTests
     public void MatchesOnlySupportedSkyrimMap(string gameName, string mapName, bool expected)
     {
         var provider = CreateProvider(new FakeDetector(), new FakeMemoryReader());
-        Assert.Equal(expected, provider.Supports(CreateMap(gameName, mapName)));
+        Assert.Equal(expected, provider.Supports(CreateDescriptor(gameName, mapName)));
     }
 
     [Fact]
     public async Task ReadsCoordinatesUsingProfileAddresses()
     {
-        var profile = SkyrimMemoryProfile.AnniversaryEdition1170;
+        var profile = SkyrimWorldMapMemoryProfile.AnniversaryEdition1170;
         var moduleBase = nint.CreateChecked(0x140000000L);
         var addresses = profile.GetPositionAddresses(moduleBase);
         var detector = new FakeDetector
@@ -35,7 +36,7 @@ public sealed class SkyrimPlayerLocationProviderTests
         });
         var provider = CreateProvider(detector, memory);
 
-        var result = await provider.ReadAsync(CreateMap("Skyrim", "Skyrim"), CancellationToken.None);
+        var result = await provider.ReadAsync(CreateDescriptor("Skyrim", "Skyrim"), CancellationToken.None);
 
         Assert.Equal(PlayerLocationReadStatus.Success, result.Status);
         Assert.NotNull(result.Location);
@@ -48,7 +49,7 @@ public sealed class SkyrimPlayerLocationProviderTests
     {
         var firstBase = nint.CreateChecked(0x140000000L);
         var secondBase = nint.CreateChecked(0x150000000L);
-        var profile = SkyrimMemoryProfile.AnniversaryEdition1170;
+        var profile = SkyrimWorldMapMemoryProfile.AnniversaryEdition1170;
         var first = profile.GetPositionAddresses(firstBase);
         var second = profile.GetPositionAddresses(secondBase);
         var detector = new FakeDetector
@@ -62,18 +63,21 @@ public sealed class SkyrimPlayerLocationProviderTests
         });
         var provider = CreateProvider(detector, memory);
 
-        Assert.Equal(PlayerLocationReadStatus.Success, (await provider.ReadAsync(CreateMap("Skyrim", "Skyrim"), default)).Status);
+        Assert.Equal(PlayerLocationReadStatus.Success, (await provider.ReadAsync(CreateDescriptor("Skyrim", "Skyrim"), default)).Status);
         detector.Process = null;
-        Assert.Equal(PlayerLocationReadStatus.GameNotRunning, (await provider.ReadAsync(CreateMap("Skyrim", "Skyrim"), default)).Status);
+        Assert.Equal(PlayerLocationReadStatus.GameNotRunning, (await provider.ReadAsync(CreateDescriptor("Skyrim", "Skyrim"), default)).Status);
         detector.Process = new GameProcessInfo(42, secondBase, @"C:\Games\SkyrimSE.exe", "1.6.1170.0");
-        Assert.Equal(PlayerLocationReadStatus.Success, (await provider.ReadAsync(CreateMap("Skyrim", "Skyrim"), default)).Status);
+        Assert.Equal(PlayerLocationReadStatus.Success, (await provider.ReadAsync(CreateDescriptor("Skyrim", "Skyrim"), default)).Status);
 
         Assert.Equal([42, 42], memory.OpenedProcessIds);
         Assert.Equal(1, memory.DisposedSessionCount);
     }
 
-    private static SkyrimPlayerLocationProvider CreateProvider(IGameProcessDetector detector, IProcessMemoryReader memory) =>
-        new(detector, memory, NullLogger<SkyrimPlayerLocationProvider>.Instance);
+    private static SkyrimWorldMapPlayerLocationProvider CreateProvider(IGameProcessDetector detector, IProcessMemoryReader memory) =>
+        new(detector, memory, NullLogger<SkyrimWorldMapPlayerLocationProvider>.Instance);
+
+    internal static GameMapDescriptor CreateDescriptor(string gameName, string mapName) =>
+        new(1, gameName, mapName, .95, 1.35, -1.35, -.78);
 
     internal static Map CreateMap(string gameName, string mapName) => new()
     {

@@ -1,11 +1,10 @@
-using MapCorleon.Models;
+using MapCorleon.Contracts;
 
-namespace MapCorleon.Services;
+namespace MapCorleon.Games.Skyrim;
 
 public readonly record struct ProcessMemoryAddresses(nint X, nint Y, nint Z);
 
-public sealed record SkyrimMapCalibration(
-    string MapName,
+public sealed record SkyrimWorldMapCalibration(
     float MinimumGameX,
     float MaximumGameX,
     float MinimumGameY,
@@ -17,10 +16,10 @@ public sealed record SkyrimMapCalibration(
     double LatitudeFromY,
     double LatitudeOffset)
 {
-    public bool TryConvert(GamePosition position, MapConfig? config, out PlayerLocation? location)
+    public bool TryConvert(GamePosition position, out PlayerLocation? location)
     {
         location = null;
-        if (config is null || MaximumGameX <= MinimumGameX || MaximumGameY <= MinimumGameY) return false;
+        if (MaximumGameX <= MinimumGameX || MaximumGameY <= MinimumGameY) return false;
         if (position.X < MinimumGameX || position.X > MaximumGameX ||
             position.Y < MinimumGameY || position.Y > MaximumGameY) return false;
 
@@ -32,19 +31,18 @@ public sealed record SkyrimMapCalibration(
     }
 }
 
-public sealed record SkyrimMemoryProfile(
+public sealed record SkyrimWorldMapMemoryProfile(
     string Version,
     nint PositionOffset,
-    SkyrimMapCalibration Calibration)
+    SkyrimWorldMapCalibration Calibration)
 {
-    // Tamriel's exterior grid spans cells -57..62 east/west and -43..46 south/north;
-    // each cell is 4096 game units. The affine coefficients were calibrated against
-    // MapGenie markers at Sleeping Giant Inn, Treasure Chest I, and College of Winterhold.
-    public static SkyrimMemoryProfile AnniversaryEdition1170 { get; } = new(
+    // Tamriel's exterior grid spans cells -57..62 east/west and -43..46 south/north.
+    // The affine coefficients are calibrated against Sleeping Giant Inn,
+    // Treasure Chest I, and College of Winterhold on the Skyrim world map.
+    public static SkyrimWorldMapMemoryProfile AnniversaryEdition1170 { get; } = new(
         "1.6.1170",
         0x338C8C0,
-        new SkyrimMapCalibration(
-            "Skyrim",
+        new SkyrimWorldMapCalibration(
             -57 * 4096,
             63 * 4096,
             -43 * 4096,

@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Contracts", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.MapGenie", "src\MapCorleon.MapGenie\MapCorleon.MapGenie.csproj", "{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Games.Skyrim", "src\MapCorleon.Games.Skyrim\MapCorleon.Games.Skyrim.csproj", "{D69DE910-0983-4737-A7B5-695A8562E1C4}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Tests", "tests\MapCorleon.Tests\MapCorleon.Tests.csproj", "{B4A65578-62DD-4F57-9F63-357A5388BC2F}"
 EndProject
 Global
@@ -28,6 +30,10 @@ Global
 		{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3A7434F-D3EF-4BF3-A8D7-7BA1E1217151}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D69DE910-0983-4737-A7B5-695A8562E1C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D69DE910-0983-4737-A7B5-695A8562E1C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D69DE910-0983-4737-A7B5-695A8562E1C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D69DE910-0983-4737-A7B5-695A8562E1C4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B4A65578-62DD-4F57-9F63-357A5388BC2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B4A65578-62DD-4F57-9F63-357A5388BC2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4A65578-62DD-4F57-9F63-357A5388BC2F}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using MapCorleon.Contracts;
 using MapCorleon.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -61,7 +62,17 @@ public sealed class PlayerLocationCoordinator : IPlayerLocationCoordinator, IHos
         return Task.CompletedTask;
     }
 
-    public bool Supports(Map map) => providers.Any(provider => provider.Supports(map));
+    public bool Supports(Map map)
+    {
+        var descriptor = GameMapDescriptorFactory.Create(map);
+        return providers.Any(provider => provider.Supports(descriptor));
+    }
+
+    public PlayerLocationProviderMetadata? GetProviderMetadata(Map map)
+    {
+        var descriptor = GameMapDescriptorFactory.Create(map);
+        return providers.FirstOrDefault(provider => provider.Supports(descriptor))?.Metadata;
+    }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
@@ -76,7 +87,8 @@ public sealed class PlayerLocationCoordinator : IPlayerLocationCoordinator, IHos
         try
         {
             await StopPollingAsync();
-            activeProvider = map is null ? null : providers.FirstOrDefault(provider => provider.Supports(map));
+            var descriptor = map is null ? null : GameMapDescriptorFactory.Create(map);
+            activeProvider = descriptor is null ? null : providers.FirstOrDefault(provider => provider.Supports(descriptor));
             if (activeProvider is null || map is null)
             {
                 SetResult(PlayerTrackingState.Inactive, "Player tracking inactive", null);
@@ -84,14 +96,14 @@ public sealed class PlayerLocationCoordinator : IPlayerLocationCoordinator, IHos
             }
 
             activeMapCancellation = CancellationTokenSource.CreateLinkedTokenSource(applicationStopping, ct);
-            activePollingTask = PollAsync(activeProvider, map, activeMapCancellation.Token);
+            activePollingTask = PollAsync(activeProvider, descriptor!, activeMapCancellation.Token);
         }
         finally { transitionGate.Release(); }
     }
 
     public void NotifyGameStarting() => SetResult(PlayerTrackingState.StartingGame, "Starting game", null);
 
-    private async Task PollAsync(IPlayerLocationProvider provider, Map map, CancellationToken ct)
+    private async Task PollAsync(IPlayerLocationProvider provider, GameMapDescriptor map, CancellationToken ct)
     {
         try
         {
