@@ -15,6 +15,9 @@ public interface IGameProcessDetector
 public interface IProcessMemorySession : IDisposable
 {
     float ReadSingle(nint address);
+    ushort ReadUInt16(nint address);
+    uint ReadUInt32(nint address);
+    nint ReadPointer(nint address);
 }
 
 public interface IProcessMemoryReader

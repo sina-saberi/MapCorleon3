@@ -4,6 +4,11 @@ namespace MapCorleon.Games.Skyrim;
 
 public readonly record struct ProcessMemoryAddresses(nint X, nint Y, nint Z);
 
+public sealed record SkyrimWorldMapMemoryLayout(
+    nint PlayerParentCellOffset,
+    nint CellFormIdOffset,
+    nint CellFlagsOffset);
+
 public sealed record SkyrimWorldMapCalibration(
     float MinimumGameX,
     float MaximumGameX,
@@ -34,6 +39,8 @@ public sealed record SkyrimWorldMapCalibration(
 public sealed record SkyrimWorldMapMemoryProfile(
     string Version,
     nint PositionOffset,
+    nint PlayerCharacterSingletonOffset,
+    SkyrimWorldMapMemoryLayout Layout,
     SkyrimWorldMapCalibration Calibration)
 {
     // Tamriel's exterior grid spans cells -57..62 east/west and -43..46 south/north.
@@ -42,6 +49,18 @@ public sealed record SkyrimWorldMapMemoryProfile(
     public static SkyrimWorldMapMemoryProfile AnniversaryEdition1170 { get; } = new(
         "1.6.1170",
         0x338C8C0,
+        // Skyrim AE 1.6.1170. Address Library ID 403521 resolves to RVA 0x31874F8
+        // in versionlib-1-6-1170-0.bin. CommonLibSSE-NG PlayerCharacter::GetSingleton
+        // dereferences the NiPointer<PlayerCharacter> stored at this relocation.
+        // https://github.com/CharmedBaryon/CommonLibSSE-NG/blob/main/include/RE/Offsets.h
+        0x31874F8,
+        // TESObjectREFR::parentCell and TESObjectCELL fields for AE 1.6.1170.
+        // https://github.com/CharmedBaryon/CommonLibSSE-NG/blob/main/include/RE/T/TESObjectREFR.h
+        // https://github.com/CharmedBaryon/CommonLibSSE-NG/blob/main/include/RE/T/TESObjectCELL.h
+        new SkyrimWorldMapMemoryLayout(
+            PlayerParentCellOffset: 0x60,
+            CellFormIdOffset: 0x14,
+            CellFlagsOffset: 0x40),
         new SkyrimWorldMapCalibration(
             -57 * 4096,
             63 * 4096,
@@ -63,4 +82,7 @@ public sealed record SkyrimWorldMapMemoryProfile(
         var x = moduleBase + PositionOffset;
         return new ProcessMemoryAddresses(x, x + sizeof(float), x + 2 * sizeof(float));
     }
+
+    public nint GetPlayerCharacterSingletonAddress(nint moduleBase) =>
+        moduleBase + PlayerCharacterSingletonOffset;
 }

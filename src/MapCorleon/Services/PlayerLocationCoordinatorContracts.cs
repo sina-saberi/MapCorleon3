@@ -10,6 +10,7 @@ public enum PlayerTrackingState
     GameNotRunning,
     StartingGame,
     TrackingPlayer,
+    PlayerIsInterior,
     UnableToReadLocation,
     UnsupportedGameVersion
 }

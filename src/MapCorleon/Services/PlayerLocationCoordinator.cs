@@ -128,6 +128,7 @@ public sealed class PlayerLocationCoordinator : IPlayerLocationCoordinator, IHos
         var (newState, message) = result.Status switch
         {
             PlayerLocationReadStatus.Success => (PlayerTrackingState.TrackingPlayer, "Tracking player"),
+            PlayerLocationReadStatus.Interior => (PlayerTrackingState.PlayerIsInterior, "Player is indoors"),
             PlayerLocationReadStatus.GameNotRunning => (PlayerTrackingState.GameNotRunning, "Game not running"),
             PlayerLocationReadStatus.UnsupportedGameVersion => (PlayerTrackingState.UnsupportedGameVersion, "Unsupported game version"),
             _ => (PlayerTrackingState.UnableToReadLocation, "Unable to read location")

@@ -12,6 +12,7 @@ public sealed record PlayerLocation(
 public enum PlayerLocationReadStatus
 {
     Success,
+    Interior,
     GameNotRunning,
     UnsupportedGameVersion,
     UnableToRead

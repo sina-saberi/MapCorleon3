@@ -16,7 +16,11 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
     private int? attachedProcessId;
     private nint? attachedModuleBase;
     private ProcessMemoryAddresses addresses;
+    private nint playerCharacterSingletonAddress;
     private SkyrimWorldMapMemoryProfile? attachedProfile;
+    private nint? lastPlayerCharacter;
+    private nint? lastCell;
+    private bool? lastInteriorState;
 
     public string Key => "skyrim-se:skyrim-world";
     public PlayerLocationProviderMetadata Metadata { get; } = new(
@@ -56,10 +60,53 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
                 attachedModuleBase = process.ModuleBaseAddress;
                 attachedProfile = profile;
                 addresses = profile.GetPositionAddresses(process.ModuleBaseAddress);
+                playerCharacterSingletonAddress = profile.GetPlayerCharacterSingletonAddress(process.ModuleBaseAddress);
+                logger.LogDebug(
+                    "Skyrim {Version} detected. Module base 0x{ModuleBase:X}; PlayerCharacter singleton 0x{Singleton:X}.",
+                    profile.Version,
+                    process.ModuleBaseAddress,
+                    playerCharacterSingletonAddress);
             }
 
+            var playerCharacter = session!.ReadPointer(playerCharacterSingletonAddress);
+            if (!IsLikelyPointer(playerCharacter))
+                return Task.FromResult(new PlayerLocationReadResult(
+                    PlayerLocationReadStatus.UnableToRead,
+                    Diagnostic: "Skyrim PlayerCharacter is temporarily unavailable."));
+            if (lastPlayerCharacter != playerCharacter)
+            {
+                logger.LogDebug("Resolved Skyrim PlayerCharacter pointer 0x{PlayerCharacter:X}.", playerCharacter);
+                lastPlayerCharacter = playerCharacter;
+            }
+
+            var parentCell = session.ReadPointer(playerCharacter + attachedProfile!.Layout.PlayerParentCellOffset);
+            if (!IsLikelyPointer(parentCell))
+                return Task.FromResult(new PlayerLocationReadResult(
+                    PlayerLocationReadStatus.UnableToRead,
+                    Diagnostic: "Skyrim parent cell is temporarily unavailable."));
+
+            var cellFormId = session.ReadUInt32(parentCell + attachedProfile.Layout.CellFormIdOffset);
+            var cellFlags = session.ReadUInt16(parentCell + attachedProfile.Layout.CellFlagsOffset);
+            var isInterior = (cellFlags & 0x1) != 0;
+            if (lastCell != parentCell || lastInteriorState != isInterior)
+            {
+                logger.LogDebug(
+                    "Skyrim cell changed: pointer 0x{Cell:X}, FormID 0x{FormId:X8}, Interior {IsInterior}.",
+                    parentCell,
+                    cellFormId,
+                    isInterior);
+                lastCell = parentCell;
+                lastInteriorState = isInterior;
+            }
+            if (isInterior)
+                return Task.FromResult(new PlayerLocationReadResult(
+                    PlayerLocationReadStatus.Interior,
+                    Diagnostic: $"Player is inside cell 0x{cellFormId:X8}."));
+
+            // Position remains on the already verified static XYZ source until the
+            // PlayerCharacter position layout is live-verified independently.
             var position = new GamePosition(
-                session!.ReadSingle(addresses.X),
+                session.ReadSingle(addresses.X),
                 session.ReadSingle(addresses.Y),
                 session.ReadSingle(addresses.Z));
             if (!IsReasonable(position))
@@ -89,9 +136,19 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
         attachedModuleBase = null;
         attachedProfile = null;
         addresses = default;
+        playerCharacterSingletonAddress = default;
+        lastPlayerCharacter = null;
+        lastCell = null;
+        lastInteriorState = null;
     }
 
     private static bool IsReasonable(GamePosition position) =>
         float.IsFinite(position.X) && float.IsFinite(position.Y) && float.IsFinite(position.Z) &&
         Math.Abs(position.X) <= 1_000_000 && Math.Abs(position.Y) <= 1_000_000 && Math.Abs(position.Z) <= 1_000_000;
+
+    private static bool IsLikelyPointer(nint pointer)
+    {
+        var value = pointer.ToInt64();
+        return value >= 0x10000 && value <= 0x00007FFFFFFFFFFF;
+    }
 }

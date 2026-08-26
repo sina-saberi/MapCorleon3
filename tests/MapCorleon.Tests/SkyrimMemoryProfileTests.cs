@@ -16,6 +16,16 @@ public sealed class SkyrimMemoryProfileTests
         Assert.Equal(nint.CreateChecked(0x14338C8C8L), addresses.Z);
     }
 
+    [Fact]
+    public void CalculatesPlayerCharacterSingletonAddressFromModuleBase()
+    {
+        var profile = SkyrimWorldMapMemoryProfile.AnniversaryEdition1170;
+
+        var address = profile.GetPlayerCharacterSingletonAddress(nint.CreateChecked(0x140000000L));
+
+        Assert.Equal(nint.CreateChecked(0x1431874F8L), address);
+    }
+
     [Theory]
     [InlineData("1.6.1170", true)]
     [InlineData("1.6.1170.0", true)]

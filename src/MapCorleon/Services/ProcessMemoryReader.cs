@@ -25,12 +25,20 @@ public sealed class WindowsProcessMemoryReader : IProcessMemoryReader
 
     private sealed class WindowsProcessMemorySession(SafeProcessHandle handle) : IProcessMemorySession
     {
-        public float ReadSingle(nint address)
+        public float ReadSingle(nint address) => BitConverter.ToSingle(ReadBytes(address, sizeof(float)));
+
+        public ushort ReadUInt16(nint address) => BitConverter.ToUInt16(ReadBytes(address, sizeof(ushort)));
+
+        public uint ReadUInt32(nint address) => BitConverter.ToUInt32(ReadBytes(address, sizeof(uint)));
+
+        public nint ReadPointer(nint address) => new(BitConverter.ToInt64(ReadBytes(address, sizeof(long))));
+
+        private byte[] ReadBytes(nint address, int length)
         {
-            var buffer = new byte[sizeof(float)];
+            var buffer = new byte[length];
             if (!NativeMethods.ReadProcessMemory(handle, address, buffer, (nuint)buffer.Length, out var read) || read != (nuint)buffer.Length)
                 throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not read process memory at 0x{address:X}.");
-            return BitConverter.ToSingle(buffer);
+            return buffer;
         }
 
         public void Dispose() => handle.Dispose();
