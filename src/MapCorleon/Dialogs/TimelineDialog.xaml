@@ -26,7 +26,7 @@
 
         <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
             <StackPanel>
-                <Border CornerRadius="5" Padding="12" Background="{StaticResource SurfaceBrush}">
+                <Border CornerRadius="5" Padding="12" Margin="3,0,3,0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <TextBlock Text="TIMELINES" Foreground="{StaticResource MutedTextBrush}" FontSize="11"/>
                         <ListBox x:Name="TimelineList" DisplayMemberPath="Name" Height="180" Margin="3,6"
