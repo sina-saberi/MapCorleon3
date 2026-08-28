@@ -3,8 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Progress categories" Width="440" Height="560" MinWidth="380" MinHeight="380"
         WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <ResourceDictionary Source="/MapCorleon;component/Styles/CategoryGroupStyles.xaml"/>
+  </Window.Resources>
   <Grid Background="{StaticResource WindowBrush}">
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
 
     <Border Grid.Row="0" Background="#172131" BorderBrush="#303C4E" BorderThickness="0,0,0,1" Padding="20,17">
       <StackPanel>
@@ -14,31 +22,88 @@
       </StackPanel>
     </Border>
 
-    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="16,14,8,14">
-      <ItemsControl ItemsSource="{Binding Groups}" Margin="0,0,6,0">
-        <ItemsControl.ItemTemplate><DataTemplate>
-          <Expander IsExpanded="True" Margin="0,0,0,8">
-            <Expander.Header>
-              <DockPanel Margin="2,7">
-                <Border DockPanel.Dock="Right" Background="#22334B" CornerRadius="9" Padding="7,2" Margin="8,0,0,0">
-                  <TextBlock Text="{Binding Categories.Count}" Foreground="#8EBDF7" FontSize="10"/>
-                </Border>
-                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#D8E2EF"/>
-              </DockPanel>
-            </Expander.Header>
-            <Border Background="#151E2A" BorderBrush="#2B394C" BorderThickness="1" CornerRadius="6" Padding="10,7" Margin="0,2,0,0">
+    <Grid Grid.Row="1" Margin="16,12,16,4">
+      <TextBox x:Name="SearchBox" Margin="0" Padding="34,9,36,9" Background="#192230"
+               Text="{Binding Query,UpdateSourceTrigger=PropertyChanged}" ToolTip="Filter progress categories"/>
+      <TextBlock Text="⌕" FontSize="18" Foreground="#7588A0" Margin="10,0,0,0"
+                 HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False"/>
+      <TextBlock Margin="34,0,38,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                 Foreground="#71839A" Text="Search categories…">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding Text,ElementName=SearchBox}" Value="">
+                <Setter Property="Visibility" Value="Visible"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+      <Button Content="×" Width="28" Height="28" Padding="0" Margin="0,0,4,0"
+              Background="Transparent" BorderThickness="0" HorizontalAlignment="Right" VerticalAlignment="Center"
+              Click="ClearSearch_Click" ToolTip="Clear search">
+        <Button.Style>
+          <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Visibility" Value="Visible"/>
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding Text,ElementName=SearchBox}" Value="">
+                <Setter Property="Visibility" Value="Collapsed"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Button.Style>
+      </Button>
+    </Grid>
+
+    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="16,8,8,14">
+      <Grid Margin="0,0,6,0">
+        <ItemsControl ItemsSource="{Binding CategoryGroups}">
+          <ItemsControl.ItemTemplate><DataTemplate>
+            <Expander Style="{StaticResource GroupExpander}" IsExpanded="True">
+              <Expander.Header>
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#D8E2EF"
+                             VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Grid.Column="1" Text="{Binding Categories.Count}" Foreground="#6F829A"
+                             Margin="8,0" VerticalAlignment="Center"/>
+                </Grid>
+              </Expander.Header>
               <ItemsControl ItemsSource="{Binding Categories}">
                 <ItemsControl.ItemTemplate><DataTemplate>
-                  <CheckBox Content="{Binding Name}" IsChecked="True" Padding="2,5"/>
+                  <Border Background="#141C27" CornerRadius="4" Margin="0,2" Padding="8,6">
+                    <Grid>
+                      <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                      <CheckBox Content="{Binding Name}" IsChecked="True"/>
+                      <Border Grid.Column="1" Background="#202D40" CornerRadius="8" Padding="7,2" Margin="8,0,0,0">
+                        <TextBlock Text="{Binding ProgressText}" Foreground="#8EA6C2" FontSize="10"
+                                   ToolTip="Marked / total locations"/>
+                      </Border>
+                    </Grid>
+                  </Border>
                 </DataTemplate></ItemsControl.ItemTemplate>
               </ItemsControl>
-            </Border>
-          </Expander>
-        </DataTemplate></ItemsControl.ItemTemplate>
-      </ItemsControl>
+            </Expander>
+          </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Text="No categories match your search." Foreground="{StaticResource MutedTextBrush}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock">
+              <Setter Property="Visibility" Value="Collapsed"/>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding CategoryGroups.Count}" Value="0">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </Grid>
     </ScrollViewer>
 
-    <Border Grid.Row="2" Background="#151B25" BorderBrush="#303C4E" BorderThickness="0,1,0,0" Padding="14,10">
+    <Border Grid.Row="3" Background="#151B25" BorderBrush="#303C4E" BorderThickness="0,1,0,0" Padding="14,10">
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
         <Button Content="Cancel" IsCancel="True" MinWidth="82"/>
         <Button Content="Apply" IsDefault="True" Click="Apply_Click" MinWidth="82" Background="#315B9C"/>

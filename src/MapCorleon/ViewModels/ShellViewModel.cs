@@ -25,6 +25,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly DispatcherTimer searchTimer;
 
     private List<Location> allLocations = [];
+    private IReadOnlyList<CategoryGroupViewModel> categoryGroups = [];
     private string query = string.Empty;
     private bool isLoading;
     private Location? selectedLocation;
@@ -58,10 +59,11 @@ public sealed class ShellViewModel : ViewModelBase
         playerLocationCoordinator.PropertyChanged += PlayerLocationCoordinatorChanged;
 
         markFilter = settingsService.Current.Filter;
-        searchTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
+        searchTimer = new DispatcherTimer { Interval = SearchTiming.DebounceDelay };
         searchTimer.Tick += (_, _) =>
         {
             searchTimer.Stop();
+            RefreshCategoryGroups();
             RefreshLocations();
         };
 
@@ -87,6 +89,11 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<Location> VisibleLocations { get; } = [];
     public ObservableCollection<Location> SearchResults { get; } = [];
     public ObservableCollection<Group> Groups { get; } = [];
+    public IReadOnlyList<CategoryGroupViewModel> CategoryGroups
+    {
+        get => categoryGroups;
+        private set => Set(ref categoryGroups, value);
+    }
     public ObservableCollection<Map> Maps { get; } = [];
     public ObservableCollection<Timeline> Timelines { get; } = [];
 
@@ -109,7 +116,11 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsSearchActive));
             searchTimer.Stop();
             if (IsSearchActive) searchTimer.Start();
-            else RefreshLocations();
+            else
+            {
+                RefreshCategoryGroups();
+                RefreshLocations();
+            }
         }
     }
 
@@ -268,6 +279,7 @@ public sealed class ShellViewModel : ViewModelBase
         }
 
         ReplaceCollection(Groups, groups);
+        RefreshCategoryGroups();
     }
 
     private async Task LoadTimelinesAsync(int mapId)
@@ -366,6 +378,8 @@ public sealed class ShellViewModel : ViewModelBase
         else if (result.Status != GameLaunchStatus.AlreadyRunning)
             MessageBox.Show(result.Message, "Launch game", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
+
+    private void RefreshCategoryGroups() => CategoryGroups = CategoryGroupFilter.Apply(Groups, Query);
 
     private async Task ReloadMediaAsync()
     {
