@@ -44,8 +44,8 @@ public sealed record SkyrimWorldMapMemoryProfile(
     SkyrimWorldMapCalibration Calibration)
 {
     // Tamriel's exterior grid spans cells -57..62 east/west and -43..46 south/north.
-    // The affine coefficients are calibrated against Sleeping Giant Inn,
-    // Treasure Chest I, and College of Winterhold on the Skyrim world map.
+    // The affine coefficients are a least-squares fit against 27 exterior
+    // Tamriel samples distributed across the imported Skyrim world map.
     public static SkyrimWorldMapMemoryProfile AnniversaryEdition1170 { get; } = new(
         "1.6.1170",
         0x338C8C0,
@@ -66,12 +66,12 @@ public sealed record SkyrimWorldMapMemoryProfile(
             63 * 4096,
             -43 * 4096,
             47 * 4096,
-            LongitudeFromX: 1.3776345695272929e-06,
-            LongitudeFromY: 2.5482703794042194e-08,
-            LongitudeOffset: -1.0927358795483875,
-            LatitudeFromX: 1.3455842776243513e-08,
-            LatitudeFromY: 1.4272830273578014e-06,
-            LatitudeOffset: 1.1294162431168082));
+            LongitudeFromX: 1.3457349544834341e-06,
+            LongitudeFromY: -1.1489646669630941e-08,
+            LongitudeOffset: -1.0928894333008343,
+            LatitudeFromX: 3.5170256592816117e-09,
+            LatitudeFromY: 1.3449893590886038e-06,
+            LatitudeOffset: 1.1259911832689498));
 
     public bool SupportsVersion(string value) =>
         value.Equals(Version, StringComparison.OrdinalIgnoreCase) ||

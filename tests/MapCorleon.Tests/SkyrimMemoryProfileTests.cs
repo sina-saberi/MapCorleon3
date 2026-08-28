@@ -34,10 +34,16 @@ public sealed class SkyrimMemoryProfileTests
         Assert.Equal(expected, SkyrimWorldMapMemoryProfile.AnniversaryEdition1170.SupportsVersion(version));
 
     [Theory]
-    [InlineData(23259.77f, -44476.16f, 1.06624915463489, -1.06182578912831)]
-    [InlineData(12193.16f, -43371.68f, 1.06767664962872, -1.07704338849510)]
-    [InlineData(111047.51f, 101237.60f, 1.27540518916250, -0.93717318313884)]
-    public void ConvertsSuppliedCalibrationAnchors(
+    [InlineData(-27335f, -103523.39f, 0.98553925728996, -1.1287987846142)]
+    [InlineData(17673.97f, -10506.01f, 1.1119435693444, -1.0692937596266)]
+    [InlineData(-131156.44f, 39191.19f, 1.177501221163, -1.2711489248576)]
+    [InlineData(-120485.66f, 129753.97f, 1.2991702874051, -1.2550219713245)]
+    [InlineData(121661.84f, 121235.88f, 1.2889470432032, -0.9323139056396)]
+    [InlineData(168459.05f, 37979.82f, 1.1761434297543, -0.86453751318368)]
+    [InlineData(172548.20f, -91071.42f, 1.0039602447541, -0.86185505251615)]
+    [InlineData(136141.20f, -108352.70f, 0.97792856335013, -0.9116240865111)]
+    [InlineData(70776.28f, -4056.19f, 1.1244554493068, -0.99324868216308)]
+    public void KeepsDistributedCalibrationSamplesNearTheirMapMarkers(
         float gameX,
         float gameY,
         double expectedLatitude,
@@ -49,7 +55,9 @@ public sealed class SkyrimMemoryProfileTests
 
         Assert.True(converted);
         Assert.NotNull(location);
-        Assert.InRange(Math.Abs(expectedLatitude - location.Latitude), 0, 1e-7);
-        Assert.InRange(Math.Abs(expectedLongitude - location.Longitude), 0, 1e-7);
+        var error = Math.Sqrt(
+            Math.Pow(expectedLatitude - location.Latitude, 2) +
+            Math.Pow(expectedLongitude - location.Longitude, 2));
+        Assert.InRange(error, 0, 0.007);
     }
 }
