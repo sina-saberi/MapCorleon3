@@ -1,156 +1,115 @@
-using System.Collections.ObjectModel;
-using System.IO;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using MapCorleon.Contracts;
 using MapCorleon.Models;
 using MapCorleon.Services;
 using MapCorleon.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32;
 
 namespace MapCorleon.Dialogs;
 
 public partial class TimelineDialog : Window
 {
-    private readonly ObservableCollection<Timeline> draft = [];
-    private readonly IPlayerLocationCoordinator playerLocations;
-    private readonly IMapSettingsService mapSettings;
-    private bool ready;
-    public TimelineDialog()
+    private readonly ShellViewModel shell;
+    private readonly ITimelineService timelines;
+    private bool busy;
+
+    public TimelineDialog(ShellViewModel shell)
     {
         InitializeComponent();
-        TimelineList.ItemsSource = draft;
-        playerLocations = App.Services.GetRequiredService<IPlayerLocationCoordinator>();
-        mapSettings = App.Services.GetRequiredService<IMapSettingsService>();
+        this.shell = shell;
+        timelines = App.Services.GetRequiredService<ITimelineService>();
+        busy = true;
+        DataContext = shell;
+        RefreshCards();
+        busy = false;
     }
 
-    private void Window_Loaded(object sender, RoutedEventArgs e)
+    private void RefreshCards()
     {
-        LoadDraft();
-        LoadMapSettings();
-        ready = true;
-    }
-    private void LoadDraft()
-    {
-        if (DataContext is not ShellViewModel vm) return;
-        draft.Clear();
-        foreach (var timeline in vm.Timelines) draft.Add(new Timeline { Id = timeline.Id, MapId = timeline.MapId, Name = timeline.Name, SortOrder = timeline.SortOrder });
-        TimelineList.SelectedItem = draft.FirstOrDefault(x => x.Id == vm.SelectedTimeline?.Id) ?? draft.FirstOrDefault();
+        TimelineCards.ItemsSource = shell.Timelines.Select(timeline =>
+            new TimelineCard(timeline, timeline.Id == shell.SelectedTimeline?.Id)).ToArray();
+        EmptyMessage.Visibility = shell.Timelines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        AddButton.IsEnabled = shell.CurrentMap is not null;
     }
 
     private async void Map_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!ready || DataContext is not ShellViewModel vm || MapBox.SelectedItem is not Map map || map.Name == vm.CurrentMapName) return;
-        await vm.LoadAsync(map.Name);
-        LoadDraft();
-        LoadMapSettings();
+        if (busy || MapBox.SelectedItem is not Map map || map.Id == shell.CurrentMap?.Id) return;
+        await RunAsync(() => shell.LoadAsync(map.Name));
     }
 
-    private void LoadMapSettings()
+    private async void Activate_Click(object sender, RoutedEventArgs e)
     {
-        if (MapBox.SelectedItem is not Map map || playerLocations.GetProviderMetadata(map) is not { } metadata)
-        {
-            GameSettingsPanel.Visibility = Visibility.Collapsed;
-            LaunchExecutableBox.Clear();
-            LaunchArgumentsBox.Clear();
-            LaunchWorkingDirectoryBox.Clear();
-            return;
-        }
-
-        GameSettingsPanel.Visibility = Visibility.Visible;
-        GameSettingsTitle.Text = metadata.SettingsTitle;
-        GameSettingsDescription.Text = metadata.SettingsDescription;
-        LaunchExecutableBox.Text = map.Config?.LaunchExecutablePath ?? string.Empty;
-        LaunchArgumentsBox.Text = map.Config?.LaunchArguments ?? string.Empty;
-        LaunchWorkingDirectoryBox.Text = map.Config?.LaunchWorkingDirectory ?? string.Empty;
+        if (sender is FrameworkElement { DataContext: TimelineCard card } && !card.IsActive)
+            await RunAsync(() => shell.ChangeTimelineAsync(card.Timeline.Id));
     }
 
-    private void BrowseExecutable_Click(object sender, RoutedEventArgs e)
+    private async void Add_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog
-        {
-            Title = "Select the game or mod-loader executable",
-            Filter = "Applications (*.exe)|*.exe|All files (*.*)|*.*",
-            CheckFileExists = true
-        };
-        var currentDirectory = GetExistingDirectory(LaunchExecutableBox.Text);
-        if (currentDirectory is not null) dialog.InitialDirectory = currentDirectory;
-        if (dialog.ShowDialog(this) != true) return;
-        LaunchExecutableBox.Text = dialog.FileName;
-        if (string.IsNullOrWhiteSpace(LaunchWorkingDirectoryBox.Text))
-            LaunchWorkingDirectoryBox.Text = Path.GetDirectoryName(dialog.FileName) ?? string.Empty;
+        if (shell.CurrentMap is not { } map) return;
+        var editor = new TimelineNameDialog { Owner = this };
+        if (editor.ShowDialog() != true) return;
+
+        var added = new Timeline { MapId = map.Id, Name = editor.TimelineName };
+        await SaveAsync(map.Id, [.. shell.Timelines, added]);
     }
 
-    private void BrowseWorkingDirectory_Click(object sender, RoutedEventArgs e)
+    private async void Edit_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "Select the game working directory" };
-        var initialDirectory = GetExistingDirectory(LaunchWorkingDirectoryBox.Text)
-            ?? GetExistingDirectory(LaunchExecutableBox.Text);
-        if (initialDirectory is not null) dialog.InitialDirectory = initialDirectory;
-        if (dialog.ShowDialog(this) == true) LaunchWorkingDirectoryBox.Text = dialog.FolderName;
+        if (sender is not FrameworkElement { DataContext: TimelineCard card }) return;
+        var timeline = card.Timeline;
+        var editor = new TimelineNameDialog(timeline.Name) { Owner = this };
+        if (editor.ShowDialog() != true || editor.TimelineName == timeline.Name) return;
+
+        var edited = new Timeline { Id = timeline.Id, MapId = timeline.MapId, Name = editor.TimelineName };
+        await SaveAsync(timeline.MapId, shell.Timelines.Select(item => item.Id == timeline.Id ? edited : item).ToArray());
     }
-    private async void Timeline_SelectionChanged(object sender, SelectionChangedEventArgs e)
+
+    private async void Delete_Click(object sender, RoutedEventArgs e)
     {
-        NameBox.Text = (TimelineList.SelectedItem as Timeline)?.Name ?? string.Empty;
-        if (ready && DataContext is ShellViewModel vm && TimelineList.SelectedItem is Timeline timeline && timeline.Id > 0) await vm.ChangeTimelineAsync(timeline.Id);
+        if (sender is not FrameworkElement { DataContext: TimelineCard card }) return;
+        var timeline = card.Timeline;
+        var confirm = MessageBox.Show(this, $"Delete “{timeline.Name}” and its progress, pins, and custom locations?",
+            "Delete timeline", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+        if (confirm != MessageBoxResult.Yes) return;
+
+        await SaveAsync(timeline.MapId, shell.Timelines.Where(item => item.Id != timeline.Id).ToArray());
     }
-    private void Add_Click(object sender, RoutedEventArgs e)
+
+    private Task SaveAsync(int mapId, IReadOnlyList<Timeline> values) => RunAsync(async () =>
     {
-        var name = NameBox.Text.Trim(); if (string.IsNullOrWhiteSpace(name)) { NameBox.Focus(); return; }
-        var timeline = new Timeline { MapId = (MapBox.SelectedItem as Map)?.Id ?? 0, Name = name, SortOrder = draft.Count };
-        draft.Add(timeline); TimelineList.SelectedItem = timeline; NameBox.SelectAll(); NameBox.Focus();
-    }
-    private void Edit_Click(object sender, RoutedEventArgs e)
+        await timelines.SaveAsync(mapId, values);
+        await shell.ReloadTimelinesAsync();
+    });
+
+    private async Task RunAsync(Func<Task> action)
     {
-        if (TimelineList.SelectedItem is not Timeline timeline || string.IsNullOrWhiteSpace(NameBox.Text)) return;
-        var index = TimelineList.SelectedIndex; timeline.Name = NameBox.Text.Trim(); TimelineList.Items.Refresh(); TimelineList.SelectedIndex = index;
-    }
-    private void Remove_Click(object sender, RoutedEventArgs e)
-    {
-        if (TimelineList.SelectedItem is not Timeline timeline) return;
-        var index = TimelineList.SelectedIndex; draft.Remove(timeline); TimelineList.SelectedIndex = Math.Min(index, draft.Count - 1);
-    }
-    private void Up_Click(object sender, RoutedEventArgs e) => Move(-1);
-    private void Down_Click(object sender, RoutedEventArgs e) => Move(1);
-    private void Move(int delta)
-    {
-        var from = TimelineList.SelectedIndex; var to = from + delta; if (from < 0 || to < 0 || to >= draft.Count) return;
-        draft.Move(from, to); TimelineList.SelectedIndex = to;
-    }
-    private async void Save_Click(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is not ShellViewModel vm || MapBox.SelectedItem is not Map map) return;
+        if (busy) return;
+        busy = true;
+        DialogContent.IsEnabled = false;
         try
         {
-            for (var i = 0; i < draft.Count; i++) draft[i].SortOrder = i;
-            var selectedName = (TimelineList.SelectedItem as Timeline)?.Name;
-            if (playerLocations.Supports(map))
-            {
-                await mapSettings.SaveGameLaunchAsync(map.Id, new GameLaunchSettings(
-                    NormalizePath(LaunchExecutableBox.Text),
-                    LaunchArgumentsBox.Text,
-                    NormalizePath(LaunchWorkingDirectoryBox.Text)));
-            }
-            await App.Services.GetRequiredService<ITimelineService>().SaveAsync(map.Id, draft);
-            await vm.LoadAsync(map.Name, selectedName);
-            DialogResult = true;
+            await action();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "Could not save map settings", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(this, ex.Message, "Could not update timelines", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            MapBox.GetBindingExpression(ComboBox.SelectedItemProperty)?.UpdateTarget();
+            RefreshCards();
+            DialogContent.IsEnabled = true;
+            busy = false;
         }
     }
 
-    private static string? NormalizePath(string? path) =>
-        string.IsNullOrWhiteSpace(path) ? null : Path.GetFullPath(path.Trim());
-
-    private static string? GetExistingDirectory(string? path)
+    protected override void OnClosing(CancelEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(path)) return null;
-        var fullPath = Path.GetFullPath(path.Trim());
-        if (Directory.Exists(fullPath)) return fullPath;
-        var directory = Path.GetDirectoryName(fullPath);
-        return directory is not null && Directory.Exists(directory) ? directory : null;
+        base.OnClosing(e);
+        if (busy) e.Cancel = true;
     }
+
+    private sealed record TimelineCard(Timeline Timeline, bool IsActive);
 }

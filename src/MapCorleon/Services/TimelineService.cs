@@ -10,11 +10,12 @@ public interface ITimelineService
     Task SaveAsync(int mapId, IReadOnlyList<Timeline> timelines, CancellationToken ct = default);
 }
 
-public sealed class TimelineService(AppDbContext db) : ITimelineService
+public sealed class TimelineService(IDbContextFactory<AppDbContext> factory) : ITimelineService
 {
-    public Task<List<Timeline>> LoadAsync(int mapId, CancellationToken ct = default)
+    public async Task<List<Timeline>> LoadAsync(int mapId, CancellationToken ct = default)
     {
-        return db.Timelines
+        await using var db = await factory.CreateDbContextAsync(ct);
+        return await db.Timelines.AsNoTracking()
             .Where(timeline => timeline.MapId == mapId)
             .OrderBy(timeline => timeline.SortOrder)
             .ToListAsync(ct);
@@ -22,6 +23,7 @@ public sealed class TimelineService(AppDbContext db) : ITimelineService
 
     public async Task SaveAsync(int mapId, IReadOnlyList<Timeline> timelines, CancellationToken ct = default)
     {
+        await using var db = await factory.CreateDbContextAsync(ct);
         var existing = await db.Timelines
             .Where(timeline => timeline.MapId == mapId)
             .ToListAsync(ct);

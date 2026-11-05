@@ -50,7 +50,11 @@ public partial class HeaderView : UserControl
         new ImportDialog { Owner = Owner }.ShowDialog();
     }
     private void Downloads_Click(object sender, RoutedEventArgs e) => new DownloadTasksDialog { Owner = Owner }.ShowDialog();
-    private void Timeline_Click(object sender, RoutedEventArgs e) => new TimelineDialog { Owner = Owner, DataContext = DataContext }.ShowDialog();
+    private void Timeline_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ShellViewModel shell)
+            new TimelineDialog(shell) { Owner = Owner }.ShowDialog();
+    }
     private async void Custom_Click(object sender, RoutedEventArgs e)
     {
         var picker = App.Services.GetRequiredService<IMapPickService>();

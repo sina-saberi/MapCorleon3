@@ -77,6 +77,25 @@
                      Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,5,0,0"/>
         </StackPanel>
       </TabItem>
+      <TabItem x:Name="GameLaunchTab" Header="Game launch" Visibility="Collapsed">
+        <StackPanel Margin="12">
+          <TextBlock x:Name="LaunchMapName" FontWeight="SemiBold" TextWrapping="Wrap"/>
+          <TextBlock x:Name="LaunchDescription" Foreground="{StaticResource MutedTextBrush}"
+                     TextWrapping="Wrap" Margin="0,5,0,12"/>
+          <TextBlock Text="Launch executable"/>
+          <DockPanel Margin="0,4,0,8">
+            <Button DockPanel.Dock="Right" Content="Browse…" Click="BrowseExecutable_Click"/>
+            <TextBox x:Name="LaunchExecutableBox"/>
+          </DockPanel>
+          <TextBlock Text="Arguments (optional)"/>
+          <TextBox x:Name="LaunchArgumentsBox" Margin="0,4,0,8"/>
+          <TextBlock Text="Working directory (optional)"/>
+          <DockPanel Margin="0,4,0,0">
+            <Button DockPanel.Dock="Right" Content="Browse…" Click="BrowseWorkingDirectory_Click"/>
+            <TextBox x:Name="LaunchWorkingDirectoryBox"/>
+          </DockPanel>
+        </StackPanel>
+      </TabItem>
       <TabItem Header="Game overlay">
         <StackPanel Margin="12">
           <TextBlock x:Name="OverlayMapName" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10"/>

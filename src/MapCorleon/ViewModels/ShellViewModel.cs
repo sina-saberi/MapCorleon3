@@ -181,10 +181,7 @@ public sealed class ShellViewModel : ViewModelBase
     public Timeline? SelectedTimeline
     {
         get => selectedTimeline;
-        private set
-        {
-            if (Set(ref selectedTimeline, value) && value is not null) PersistSelectionAsync();
-        }
+        private set => Set(ref selectedTimeline, value);
     }
 
     public Location? SelectedLocation
@@ -213,7 +210,7 @@ public sealed class ShellViewModel : ViewModelBase
         }
     }
 
-    public async Task LoadAsync(string? preferredMapName = null, string? preferredTimelineName = null)
+    public async Task LoadAsync(string? preferredMapName = null)
     {
         loadedLocationScope = null;
         IsLoading = true;
@@ -242,7 +239,10 @@ public sealed class ShellViewModel : ViewModelBase
             await playerLocationCoordinator.SetActiveMapAsync(map);
 
             await LoadGroupsAsync(map.Id);
-            await LoadTimelinesAsync(map.Id, preferredTimelineName);
+            var timelines = await ReadTimelinesAsync(map.Id);
+            ReplaceCollection(Timelines, timelines);
+            SelectedTimeline = timelines.FirstOrDefault(timeline => timeline.Id == settingsService.Current.CurrentTimelineId)
+                ?? timelines.FirstOrDefault();
 
             var timelineId = SelectedTimeline?.Id ?? 0;
             allLocations = await locationService.LoadAsync(map.Id, timelineId);
@@ -260,17 +260,30 @@ public sealed class ShellViewModel : ViewModelBase
 
     public async Task ChangeTimelineAsync(int timelineId)
     {
-        if (CurrentMap is not { } map) return;
-        loadedLocationScope = null;
-        SelectedTimeline = Timelines.FirstOrDefault(timeline => timeline.Id == timelineId);
-        if (SelectedTimeline is null) return;
+        if (CurrentMap is not { } map || Timelines.FirstOrDefault(item => item.Id == timelineId) is not { } timeline)
+            return;
         var locations = await locationService.LoadAsync(map.Id, timelineId);
-        if (CurrentMap?.Id != map.Id || SelectedTimeline?.Id != timelineId) return;
+        if (CurrentMap?.Id != map.Id) return;
+        SelectedTimeline = timeline;
         allLocations = locations;
         loadedLocationScope = (map.Id, timelineId);
         UpdateCategoryProgress();
         SelectedLocation = null;
         RefreshLocations();
+        await PersistSelectionAsync();
+    }
+
+    internal async Task ReloadTimelinesAsync()
+    {
+        if (CurrentMap is not { } map) return;
+        var timelines = await ReadTimelinesAsync(map.Id);
+        if (CurrentMap?.Id != map.Id) return;
+        ReplaceCollection(Timelines, timelines);
+        var active = timelines.FirstOrDefault(timeline => timeline.Id == SelectedTimeline?.Id);
+        if (active is not null)
+            SelectedTimeline = active;
+        else if (timelines.Count > 0)
+            await ChangeTimelineAsync(timelines[0].Id);
     }
 
     public void SelectLocationById(int id) => SelectedLocation = allLocations.FirstOrDefault(location => location.Id == id);
@@ -313,19 +326,12 @@ public sealed class ShellViewModel : ViewModelBase
         RefreshCategoryGroups();
     }
 
-    private async Task LoadTimelinesAsync(int mapId, string? preferredTimelineName)
-    {
-        var timelines = await db.Timelines
+    private Task<List<Timeline>> ReadTimelinesAsync(int mapId) =>
+        db.Timelines
             .AsNoTracking()
             .Where(timeline => timeline.MapId == mapId)
             .OrderBy(timeline => timeline.SortOrder)
             .ToListAsync();
-
-        ReplaceCollection(Timelines, timelines);
-        SelectedTimeline = timelines.FirstOrDefault(timeline => timeline.Name == preferredTimelineName)
-            ?? timelines.FirstOrDefault(timeline => timeline.Id == settingsService.Current.CurrentTimelineId)
-            ?? timelines.FirstOrDefault();
-    }
 
     private async Task ToggleMarkAsync()
     {
