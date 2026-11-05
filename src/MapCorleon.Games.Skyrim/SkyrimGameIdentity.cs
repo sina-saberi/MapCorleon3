@@ -2,7 +2,7 @@ using MapCorleon.Contracts;
 
 namespace MapCorleon.Games.Skyrim;
 
-internal static class SkyrimGameIdentity
+public static class SkyrimGameIdentity
 {
     public static bool IsSkyrim(GameMapDescriptor map)
     {

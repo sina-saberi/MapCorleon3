@@ -133,8 +133,7 @@ public partial class TimelineDialog : Window
                     NormalizePath(LaunchWorkingDirectoryBox.Text)));
             }
             await App.Services.GetRequiredService<ITimelineService>().SaveAsync(map.Id, draft);
-            await vm.LoadAsync(map.Name);
-            vm.SelectedTimeline = vm.Timelines.FirstOrDefault(x => x.Name == selectedName) ?? vm.Timelines.FirstOrDefault();
+            await vm.LoadAsync(map.Name, selectedName);
             DialogResult = true;
         }
         catch (Exception ex)

@@ -39,9 +39,8 @@ public partial class HeaderView : UserControl
     {
         ImportButton.IsEnabled = true;
         TaskPanel.Visibility = tasks.IsRunning ? Visibility.Visible : Visibility.Collapsed;
-        TaskText.Text = tasks.ActiveTaskLabel;
         TaskProgress.Value = tasks.Percentage;
-        TaskPercent.Text = $"{tasks.Percentage}%";
+        TaskPanel.ToolTip = $"{tasks.ActiveTaskLabel} — {tasks.Percentage}%";
     }
     private void Settings_Click(object sender, RoutedEventArgs e) => new SettingsDialog { Owner = Owner }.ShowDialog();
     private void Import_Click(object sender, RoutedEventArgs e)
@@ -50,5 +49,25 @@ public partial class HeaderView : UserControl
     }
     private void Downloads_Click(object sender, RoutedEventArgs e) => new DownloadTasksDialog { Owner = Owner }.ShowDialog();
     private void Timeline_Click(object sender, RoutedEventArgs e) => new TimelineDialog { Owner = Owner, DataContext = DataContext }.ShowDialog();
-    private void Custom_Click(object sender, RoutedEventArgs e) => new LocationEditorDialog { Owner = Owner, DataContext = DataContext }.Show();
+    private async void Custom_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = App.Services.GetRequiredService<IMapPickService>();
+        if (picker.IsPicking) return;
+
+        try
+        {
+            CustomButton.IsEnabled = false;
+            var position = await picker.PickAsync();
+            new LocationEditorDialog(position)
+            {
+                Owner = Owner,
+                DataContext = DataContext
+            }.Show();
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            CustomButton.IsEnabled = true;
+        }
+    }
 }

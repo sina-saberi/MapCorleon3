@@ -20,6 +20,7 @@ using MapCorleon.Services;
 using MapCorleon.Contracts;
 using MapCorleon.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace MapCorleon.Views;
@@ -35,14 +36,17 @@ public partial class MapView
     private readonly DispatcherTimer markerRefreshTimer;
     private readonly DispatcherTimer followResumeTimer;
     private readonly PlayerMapFollowController playerFollow = new();
+    private readonly IMapPickService mapPicker;
 
     public MapView()
     {
         InitializeComponent();
+        mapPicker = App.Services.GetRequiredService<IMapPickService>();
         MapControl.MapTapped += MapTapped;
         MapControl.MapPointerMoved += MapPointerMoved;
         MapControl.PreviewMouseDown += (_, _) => PauseFollowingForUserNavigation();
         MapControl.PreviewMouseWheel += (_, _) => PauseFollowingForUserNavigation();
+        MapControl.PreviewKeyDown += MapKeyDown;
         followResumeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
         followResumeTimer.Tick += (_, _) =>
         {
@@ -53,9 +57,15 @@ public partial class MapView
         };
         markerRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
         markerRefreshTimer.Tick += (_, _) => { markerRefreshTimer.Stop(); RebuildLocations(); };
-        Loaded += (_, _) => Attach();
+        Loaded += (_, _) =>
+        {
+            mapPicker.PickingChanged += MapPickerChanged;
+            RefreshMapPickState();
+            Attach();
+        };
         Unloaded += (_, _) =>
         {
+            mapPicker.PickingChanged -= MapPickerChanged;
             playerFollow.StopFollowing();
             Detach();
         };
@@ -229,11 +239,15 @@ public partial class MapView
     }
 
     private void FollowPlayer_Click(object sender, System.Windows.RoutedEventArgs e)
+        => TogglePlayerFollow();
+
+    internal bool TogglePlayerFollow()
     {
         followResumeTimer.Stop();
         var following = playerFollow.Toggle();
         RefreshFollowButton();
         if (following) CenterOnPlayer();
+        return following;
     }
 
     private void CenterOnPlayer()
@@ -246,6 +260,22 @@ public partial class MapView
     private void MapPointerMoved(object? sender, MapEventArgs e)
     {
         if (e.GestureType == GestureType.Drag) PauseFollowingForUserNavigation();
+    }
+
+    private void MapPickerChanged(object? sender, EventArgs e) => Dispatcher.Invoke(RefreshMapPickState);
+
+    private void RefreshMapPickState()
+    {
+        var isPicking = mapPicker.IsPicking;
+        MapControl.Cursor = isPicking ? Cursors.Cross : Cursors.Arrow;
+        PickHint.Visibility = isPicking ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        if (isPicking) MapControl.Focus();
+    }
+
+    private void MapKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || !mapPicker.Cancel()) return;
+        e.Handled = true;
     }
 
     private void PauseFollowingForUserNavigation()
@@ -290,11 +320,10 @@ public partial class MapView
     private void MapTapped(object? sender, MapEventArgs e)
     {
         PauseFollowingForUserNavigation();
-        var picker = App.Services.GetRequiredService<IMapPickService>();
-        if (picker.IsPicking)
+        if (mapPicker.IsPicking)
         {
             var coordinates = SphericalMercator.ToLonLat(e.WorldPosition.X, e.WorldPosition.Y);
-            picker.Complete(coordinates.lat, coordinates.lon); e.Handled = true; return;
+            mapPicker.Complete(new MapPosition(coordinates.lat, coordinates.lon)); e.Handled = true; return;
         }
         if (locationLayer is null || viewModel is null) return;
         var info = e.GetMapInfo([locationLayer]);

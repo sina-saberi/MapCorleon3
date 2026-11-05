@@ -3,7 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mapsui="clr-namespace:Mapsui.UI.Wpf;assembly=Mapsui.UI.Wpf">
   <Grid Background="#111923">
-    <mapsui:MapControl x:Name="MapControl"/>
+    <mapsui:MapControl x:Name="MapControl" Focusable="True"/>
+    <Border x:Name="PickHint" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="12"
+            Padding="12,8" Background="#E6315B9C" BorderBrush="#7FB4F3" BorderThickness="1"
+            CornerRadius="6" Visibility="Collapsed" IsHitTestVisible="False">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Text="+" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,8,0"/>
+        <TextBlock Text="Click the map to place the location  •  Esc to cancel"
+                   Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
+      </StackPanel>
+    </Border>
     <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Padding="8,5"
             Background="#CC171D28" CornerRadius="4" IsHitTestVisible="False">
       <TextBlock x:Name="StatusText" Text="Loading map…" Foreground="#D9E4F2"/>

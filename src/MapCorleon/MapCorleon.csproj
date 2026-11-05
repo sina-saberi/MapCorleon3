@@ -5,6 +5,7 @@
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="MapCorleon.Tests" />
     <Resource Include="Assets\AppIcon.png" />
     <Resource Include="Assets\AppIcon.ico" />
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />

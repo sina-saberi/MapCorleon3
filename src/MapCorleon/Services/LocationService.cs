@@ -8,6 +8,7 @@ public interface ILocationService
 {
     Task<List<Location>> LoadAsync(int mapId, int timelineId, CancellationToken ct = default);
     Task ToggleMarkedAsync(int locationId, int timelineId, CancellationToken ct = default);
+    Task<MarkedLocation?> MarkCollectedAsync(int locationId, int mapId, int timelineId, CancellationToken ct = default);
     Task<Location> SaveAsync(Location location, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
     Task AddMediaAsync(int locationId, string file, CancellationToken ct = default);
@@ -15,6 +16,7 @@ public interface ILocationService
 
 public sealed class LocationService(
     AppDbContext db,
+    IDbContextFactory<AppDbContext> factory,
     IMediaService mediaService,
     IMediaPathResolver mediaPathResolver) : ILocationService
 {
@@ -49,6 +51,27 @@ public sealed class LocationService(
             db.Remove(mark);
 
         await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<MarkedLocation?> MarkCollectedAsync(int locationId, int mapId, int timelineId, CancellationToken ct = default)
+    {
+        await using var writeDb = await factory.CreateDbContextAsync(ct);
+        var markedAtUtc = DateTime.UtcNow;
+        await writeDb.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "Marked Locations" ("LocationId", "TimelineId", "MarkedAtUtc")
+            SELECT location."Id", timeline."Id", {markedAtUtc}
+            FROM "Locations" AS location
+            JOIN "Categories" AS category ON category."Id" = location."CategoryId"
+            JOIN "Groups" AS categoryGroup ON categoryGroup."Id" = category."GroupId"
+            JOIN "Timelines" AS timeline ON timeline."Id" = {timelineId} AND timeline."MapId" = categoryGroup."MapId"
+            WHERE location."Id" = {locationId} AND categoryGroup."MapId" = {mapId}
+              AND (location."IsCustom" = 0 OR location."TimelineId" = timeline."Id")
+            ON CONFLICT ("TimelineId", "LocationId") DO NOTHING
+            """, ct);
+        return await writeDb.MarkedLocations.AsNoTracking()
+            .SingleOrDefaultAsync(mark => mark.LocationId == locationId && mark.TimelineId == timelineId &&
+                mark.Timeline!.MapId == mapId && mark.Location!.Category!.Group!.MapId == mapId &&
+                (!mark.Location.IsCustom || mark.Location.TimelineId == timelineId), ct);
     }
 
     public async Task<Location> SaveAsync(Location location, CancellationToken ct = default)

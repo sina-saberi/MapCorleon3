@@ -6,7 +6,7 @@
       <Style.Triggers><DataTrigger Binding="{Binding SelectedLocation}" Value="{x:Null}"><Setter Property="Width" Value="0"/></DataTrigger></Style.Triggers>
     </Style></ColumnDefinition.Style>
    </ColumnDefinition></Grid.ColumnDefinitions>
-   <views:LeftSidebarView Grid.Column="0"/><views:MapView Grid.Column="1"/><views:RightSidebarView Grid.Column="2"/>
+   <views:LeftSidebarView Grid.Column="0"/><views:MapView x:Name="DesktopMap" Grid.Column="1"/><views:RightSidebarView Grid.Column="2"/>
   </Grid>
   <Border Background="#88000000" Visibility="{Binding IsLoading,Converter={StaticResource BoolToVisibility}}"><StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"><ProgressBar IsIndeterminate="True" Width="240" Height="8"/><TextBlock Text="Loading…" Foreground="White" FontSize="16" Margin="0,12" HorizontalAlignment="Center"/></StackPanel></Border>
  </Grid>

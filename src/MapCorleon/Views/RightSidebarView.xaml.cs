@@ -126,7 +126,11 @@ public partial class RightSidebarView : UserControl
         if ((DataContext as ShellViewModel)?.SelectedLocation is not { } location || selectedMedia is null || !System.IO.File.Exists(selectedMedia.RelativePath)) return;
         new MediaViewerDialog(location.Media.ToList(), Math.Max(0, ThumbnailList.SelectedIndex)) { Owner = Window.GetWindow(this) }.ShowDialog();
     }
-    private void Edit_Click(object sender, RoutedEventArgs e) { var vm = DataContext as ShellViewModel; new LocationEditorDialog(vm?.SelectedLocation) { Owner = Window.GetWindow(this), DataContext = DataContext }.Show(); }
+    private void Edit_Click(object sender, RoutedEventArgs e)
+    {
+        if ((DataContext as ShellViewModel)?.SelectedLocation is not { } location) return;
+        new LocationEditorDialog(location) { Owner = Window.GetWindow(this), DataContext = DataContext }.Show();
+    }
     private void Move_Click(object sender, RoutedEventArgs e) => (DataContext as ShellViewModel)?.FocusSelectedLocation();
     private void Close_Click(object sender, RoutedEventArgs e)
     {

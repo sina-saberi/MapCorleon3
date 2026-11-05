@@ -25,6 +25,8 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly DispatcherTimer searchTimer;
 
     private List<Location> allLocations = [];
+    private (int MapId, int TimelineId)? loadedLocationScope;
+    private bool isChangingMark;
     private (int Picked, int Total) trackedProgress;
     private IReadOnlyList<CategoryGroupViewModel> categoryGroups = [];
     private string query = string.Empty;
@@ -138,9 +140,15 @@ public sealed class ShellViewModel : ViewModelBase
     public int ProgressPercentage => trackedProgress.Total == 0 ? 0 : (int)Math.Round(trackedProgress.Picked * 100d / trackedProgress.Total);
     public IReadOnlySet<int> ExcludedProgressCategoryIds => settingsService.Current.ExcludedProgressCategoryIds;
     public PlayerLocation? LivePlayerLocation => playerLocationCoordinator.CurrentLocation;
+    public PlayerTrackingState TrackingState => playerLocationCoordinator.State;
     public string PlayerTrackingStatusText => playerLocationCoordinator.StatusText;
     public bool IsPlayerTrackingSupported => CurrentMap is not null && playerLocationCoordinator.Supports(CurrentMap);
     public bool CanLaunchGame => IsPlayerTrackingSupported && CurrentGameLauncher is not null;
+
+    internal IReadOnlyList<Location> LoadedLocations => allLocations;
+    internal (int MapId, int TimelineId)? LoadedLocationScope =>
+        !IsLoading && CurrentMap is { } map && SelectedTimeline is { } timeline &&
+        loadedLocationScope == (map.Id, timeline.Id) ? loadedLocationScope : null;
 
     private IGameLauncher? CurrentGameLauncher => CurrentMap is null
         ? null
@@ -173,7 +181,7 @@ public sealed class ShellViewModel : ViewModelBase
     public Timeline? SelectedTimeline
     {
         get => selectedTimeline;
-        set
+        private set
         {
             if (Set(ref selectedTimeline, value) && value is not null) PersistSelectionAsync();
         }
@@ -205,8 +213,9 @@ public sealed class ShellViewModel : ViewModelBase
         }
     }
 
-    public async Task LoadAsync(string? preferredMapName = null)
+    public async Task LoadAsync(string? preferredMapName = null, string? preferredTimelineName = null)
     {
+        loadedLocationScope = null;
         IsLoading = true;
         try
         {
@@ -233,9 +242,11 @@ public sealed class ShellViewModel : ViewModelBase
             await playerLocationCoordinator.SetActiveMapAsync(map);
 
             await LoadGroupsAsync(map.Id);
-            await LoadTimelinesAsync(map.Id);
+            await LoadTimelinesAsync(map.Id, preferredTimelineName);
 
-            allLocations = await locationService.LoadAsync(map.Id, SelectedTimeline?.Id ?? 0);
+            var timelineId = SelectedTimeline?.Id ?? 0;
+            allLocations = await locationService.LoadAsync(map.Id, timelineId);
+            loadedLocationScope = (map.Id, timelineId);
             UpdateCategoryProgress();
             SelectedLocation = null;
             RefreshLocations();
@@ -249,10 +260,14 @@ public sealed class ShellViewModel : ViewModelBase
 
     public async Task ChangeTimelineAsync(int timelineId)
     {
-        if (CurrentMap is null) return;
+        if (CurrentMap is not { } map) return;
+        loadedLocationScope = null;
         SelectedTimeline = Timelines.FirstOrDefault(timeline => timeline.Id == timelineId);
         if (SelectedTimeline is null) return;
-        allLocations = await locationService.LoadAsync(CurrentMap.Id, SelectedTimeline.Id);
+        var locations = await locationService.LoadAsync(map.Id, timelineId);
+        if (CurrentMap?.Id != map.Id || SelectedTimeline?.Id != timelineId) return;
+        allLocations = locations;
+        loadedLocationScope = (map.Id, timelineId);
         UpdateCategoryProgress();
         SelectedLocation = null;
         RefreshLocations();
@@ -298,7 +313,7 @@ public sealed class ShellViewModel : ViewModelBase
         RefreshCategoryGroups();
     }
 
-    private async Task LoadTimelinesAsync(int mapId)
+    private async Task LoadTimelinesAsync(int mapId, string? preferredTimelineName)
     {
         var timelines = await db.Timelines
             .AsNoTracking()
@@ -307,20 +322,42 @@ public sealed class ShellViewModel : ViewModelBase
             .ToListAsync();
 
         ReplaceCollection(Timelines, timelines);
-        SelectedTimeline = timelines.FirstOrDefault(
-            timeline => timeline.Id == settingsService.Current.CurrentTimelineId)
+        SelectedTimeline = timelines.FirstOrDefault(timeline => timeline.Name == preferredTimelineName)
+            ?? timelines.FirstOrDefault(timeline => timeline.Id == settingsService.Current.CurrentTimelineId)
             ?? timelines.FirstOrDefault();
     }
 
     private async Task ToggleMarkAsync()
     {
-        if (SelectedLocation is null || SelectedTimeline is null || CurrentMap is null) return;
+        if (SelectedLocation is null || LoadedLocationScope is not { } scope || isChangingMark) return;
         var selectedId = SelectedLocation.Id;
-        await locationService.ToggleMarkedAsync(selectedId, SelectedTimeline.Id);
-        allLocations = await locationService.LoadAsync(CurrentMap.Id, SelectedTimeline.Id);
-        UpdateCategoryProgress();
-        SelectedLocation = allLocations.FirstOrDefault(location => location.Id == selectedId);
-        RefreshLocations();
+        isChangingMark = true;
+        try
+        {
+            await locationService.ToggleMarkedAsync(selectedId, scope.TimelineId);
+            if (LoadedLocationScope == scope) await ReloadMediaAsync();
+        }
+        finally { isChangingMark = false; }
+    }
+
+    internal async Task<bool> CollectOverlayLocationAsync(int locationId, (int MapId, int TimelineId) scope, CancellationToken ct)
+    {
+        if (LoadedLocationScope != scope || isChangingMark) return false;
+        isChangingMark = true;
+        try
+        {
+            var mark = await locationService.MarkCollectedAsync(locationId, scope.MapId, scope.TimelineId, ct);
+            if (mark is null) return false;
+            if (LoadedLocationScope == scope && allLocations.FirstOrDefault(location => location.Id == locationId) is { } location)
+            {
+                if (location.Marks.Count == 0) location.Marks.Add(mark);
+                UpdateCategoryProgress();
+                RefreshLocations();
+                OnPropertyChanged(nameof(MarkActionText));
+            }
+            return true;
+        }
+        finally { isChangingMark = false; }
     }
 
     private void RefreshLocations()
@@ -391,6 +428,8 @@ public sealed class ShellViewModel : ViewModelBase
         {
             if (e.PropertyName == nameof(IPlayerLocationCoordinator.CurrentLocation))
                 OnPropertyChanged(nameof(LivePlayerLocation));
+            else if (e.PropertyName == nameof(IPlayerLocationCoordinator.State))
+                OnPropertyChanged(nameof(TrackingState));
             else if (e.PropertyName == nameof(IPlayerLocationCoordinator.StatusText))
                 OnPropertyChanged(nameof(PlayerTrackingStatusText));
         });
@@ -414,9 +453,11 @@ public sealed class ShellViewModel : ViewModelBase
 
     private async Task ReloadMediaAsync()
     {
-        if (CurrentMap is null || SelectedTimeline is null) return;
+        if (LoadedLocationScope is not { } scope) return;
+        var locations = await locationService.LoadAsync(scope.MapId, scope.TimelineId);
+        if (LoadedLocationScope != scope) return;
         var selectedId = SelectedLocation?.Id;
-        allLocations = await locationService.LoadAsync(CurrentMap.Id, SelectedTimeline.Id);
+        allLocations = locations;
         UpdateCategoryProgress();
         SelectedLocation = selectedId.HasValue
             ? allLocations.FirstOrDefault(location => location.Id == selectedId.Value)
