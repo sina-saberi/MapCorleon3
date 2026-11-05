@@ -24,8 +24,7 @@ namespace
 {
     constexpr auto SettingsPath = L".\\Data\\SKSE\\Plugins\\MapCorleonOverlay.ini";
     constexpr unsigned int Escape = 0x01;
-    unsigned int overlayKey = 0x41; // F7
-    unsigned int followKey = 0x42;  // F8
+    constexpr OverlayKeys DefaultKeys{ 0x41, 0x42 }; // F7, F8
     SKSEMenuFramework::Model::WindowInterface* controls;
     PipeClient* client;
     std::array<bool, 256> consumedKeys{};
@@ -36,10 +35,10 @@ namespace
             std::ofstream(*directory / "MapCorleonOverlay.log", std::ios::app) << message << '\n';
     }
 
-    unsigned int ReadKey(const wchar_t* name, unsigned int defaultKey)
+    std::uint8_t ReadKey(const wchar_t* name, std::uint8_t defaultKey)
     {
         const auto key = GetPrivateProfileIntW(L"Keys", name, defaultKey, SettingsPath);
-        return key > Escape && key < 256 ? key : defaultKey;
+        return key > Escape && key < 256 ? static_cast<std::uint8_t>(key) : defaultKey;
     }
 
     void SetPanelOpen(bool open)
@@ -108,11 +107,13 @@ namespace
         const auto button = event->AsButtonEvent();
         if (!button) return false;
         const auto key = button->GetIDCode();
-        if (key != overlayKey && key != followKey && key != Escape) return false;
+        if (key >= consumedKeys.size()) return false;
         if (!button->IsDown())
             return button->IsPressed() ? consumedKeys[key] : std::exchange(consumedKeys[key], false);
 
-        if (key == Escape || key == overlayKey)
+        const auto keys = client->Keys();
+        if (key != keys.panel && key != keys.follow && key != Escape) return false;
+        if (key == Escape || key == keys.panel)
         {
             if (controls->IsOpen)
             {
@@ -150,20 +151,15 @@ namespace
             return;
         }
 
-        overlayKey = ReadKey(L"OverlayScanCode", overlayKey);
-        followKey = ReadKey(L"FollowScanCode", followKey);
-        if (overlayKey == followKey)
-        {
-            overlayKey = 0x41;
-            followKey = 0x42;
-        }
+        OverlayKeys iniKeys{ ReadKey(L"OverlayScanCode", DefaultKeys.panel), ReadKey(L"FollowScanCode", DefaultKeys.follow) };
+        if (iniKeys.panel == iniKeys.follow) iniKeys = DefaultKeys;
         controls = SKSEMenuFramework::AddWindow(DrawControls);
         if (!controls)
         {
             Log("SKSE Menu Framework did not create the overlay window.");
             return;
         }
-        client = new PipeClient;
+        client = new PipeClient(iniKeys);
         client->Start();
         SKSEMenuFramework::AddHudElement(DrawNotifications);
         SKSEMenuFramework::AddInputEvent(OnInput);

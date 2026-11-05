@@ -11,6 +11,7 @@ public sealed record AppSettings(
     int? CurrentTimelineId = null)
 {
     public HashSet<int> ExcludedProgressCategoryIds { get; init; } = [];
+    public Dictionary<string, GameOverlaySettings> GameOverlays { get; init; } = new(StringComparer.Ordinal);
 
     [JsonIgnore] public string TileDirectory => Path.Combine(DataDirectory, "tiles");
     [JsonIgnore] public string StorageDirectory => Path.Combine(DataDirectory, "storage");

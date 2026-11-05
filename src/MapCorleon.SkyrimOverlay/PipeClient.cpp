@@ -12,6 +12,20 @@ namespace
     using namespace std::chrono_literals;
     using Json = nlohmann::json;
 
+    int ReadInteger(const Json& object, const char* name, int fallback, int minimum, int maximum)
+    {
+        const auto entry = object.find(name);
+        if (entry == object.end() || !entry->is_number_integer()) return fallback;
+        if (entry->is_number_unsigned())
+        {
+            const auto value = entry->get<std::uint64_t>();
+            return value >= static_cast<std::uint64_t>(minimum) && value <= static_cast<std::uint64_t>(maximum)
+                ? static_cast<int>(value) : fallback;
+        }
+        const auto value = entry->get<std::int64_t>();
+        return value >= minimum && value <= maximum ? static_cast<int>(value) : fallback;
+    }
+
     struct Handle
     {
         HANDLE value;
@@ -86,8 +100,24 @@ namespace
         }
         if (auto feedback = response.find("feedback"); feedback != response.end() && feedback->is_string())
             snapshot.feedback = feedback->get<std::string>();
+        if (const auto preferences = response.find("preferences"); preferences != response.end() && preferences->is_object())
+        {
+            const auto panel = ReadInteger(*preferences, "panelScanCode", 0, 2, 255);
+            const auto follow = ReadInteger(*preferences, "followScanCode", 0, 2, 255);
+            if (panel && follow && panel != follow)
+                snapshot.keys = OverlayKeys{ static_cast<std::uint8_t>(panel), static_cast<std::uint8_t>(follow) };
+            snapshot.nearbyNotificationDuration =
+                std::chrono::seconds(ReadInteger(*preferences, "nearbyNotificationSeconds", 4, 1, 15));
+        }
         return snapshot;
     }
+}
+
+PipeClient::PipeClient(OverlayKeys iniKeys) : iniKeys(iniKeys), activeKeys(iniKeys) {}
+
+OverlayKeys PipeClient::Keys() const
+{
+    return activeKeys.load(std::memory_order_relaxed);
 }
 
 void PipeClient::Start()
@@ -163,7 +193,7 @@ void PipeClient::UpdateNearbyToast(const OverlaySnapshot& next, Clock::time_poin
     if (!arrivals.empty())
     {
         nearbyToast = std::move(arrivals);
-        nearbyToastUntil = now + 4s;
+        nearbyToastUntil = now + next.nearbyNotificationDuration;
     }
     else if (now >= nearbyToastUntil || !next.canFollow)
         nearbyToast.clear();
@@ -199,6 +229,8 @@ void PipeClient::Run()
         {
             std::unique_lock lock(mutex);
             const auto now = Clock::now();
+            if (!next.scope.empty())
+                activeKeys.store(next.keys.value_or(iniKeys), std::memory_order_relaxed);
             UpdateNearbyToast(next, now);
             if (!next.feedback.empty())
             {

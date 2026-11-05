@@ -3,6 +3,7 @@ using System.IO.Pipes;
 using System.Text.Json;
 using System.Windows.Threading;
 using MapCorleon.Games.Skyrim;
+using MapCorleon.Models;
 using MapCorleon.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +13,7 @@ internal sealed class SkyrimOverlayServer(
     Dispatcher dispatcher,
     ShellViewModel shell,
     Func<bool> toggleFollow,
+    ISettingsService settings,
     ILogger logger)
 {
     private const string PipeName = "MapCorleon.SkyrimOverlay.v1";
@@ -81,7 +83,9 @@ internal sealed class SkyrimOverlayServer(
         }
 
         var player = scope.HasValue ? shell.LivePlayerLocation : null;
-        var cards = nearby.Find(player, shell.LoadedLocations);
+        var preferences = settings.Current.GameOverlays.GetValueOrDefault(SkyrimGameIdentity.OverlaySettingsKey)
+            ?? GameOverlaySettings.Default;
+        var cards = nearby.Find(player, shell.LoadedLocations, preferences);
         string? feedback = null;
         if (scope is { } activeScope && player is not null && request.Scope == scopeToken)
         {
@@ -94,12 +98,17 @@ internal sealed class SkyrimOverlayServer(
                 else if (request.Action == "collect")
                     feedback = await shell.CollectOverlayLocationAsync(request.LocationId, activeScope, ct)
                         ? "Collected" : "Could not collect. Try again.";
-                cards = nearby.Find(shell.LoadedLocationScope == scope ? shell.LivePlayerLocation : null, shell.LoadedLocations);
+                cards = nearby.Find(shell.LoadedLocationScope == scope ? shell.LivePlayerLocation : null, shell.LoadedLocations, preferences);
             }
         }
-        return new OverlayState(scopeToken, player is not null, cards, feedback);
+        var overlayPreferences = new OverlayPreferences(preferences.PanelScanCode, preferences.FollowScanCode,
+            Math.Clamp(preferences.NearbyNotificationSeconds, GameOverlaySettings.MinNotificationSeconds,
+                GameOverlaySettings.MaxNotificationSeconds));
+        return new OverlayState(scopeToken, player is not null, cards, feedback, overlayPreferences);
     }
 
     private sealed record OverlayRequest(string Action, Guid Scope = default, int LocationId = 0);
-    private sealed record OverlayState(Guid Scope, bool CanFollow, IReadOnlyList<SkyrimNearbyLocations.Card> Cards, string? Feedback);
+    private sealed record OverlayPreferences(int? PanelScanCode, int? FollowScanCode, int NearbyNotificationSeconds);
+    private sealed record OverlayState(Guid Scope, bool CanFollow, IReadOnlyList<SkyrimNearbyLocations.Card> Cards,
+        string? Feedback, OverlayPreferences Preferences);
 }

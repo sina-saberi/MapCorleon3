@@ -76,6 +76,7 @@ public sealed class JsonSettingsService : ISettingsService
 
     private static AppSettings Normalize(AppSettings settings) => settings with
     {
-        DataDirectory = Path.GetFullPath(settings.DataDirectory.Trim())
+        DataDirectory = Path.GetFullPath(settings.DataDirectory.Trim()),
+        GameOverlays = settings.GameOverlays ?? new(StringComparer.Ordinal)
     };
 }

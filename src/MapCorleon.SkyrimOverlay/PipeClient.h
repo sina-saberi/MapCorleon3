@@ -3,6 +3,7 @@
 #include <chrono>
 #include <atomic>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -16,17 +17,27 @@ struct OverlayCard
     std::string category;
 };
 
+struct OverlayKeys
+{
+    std::uint8_t panel;
+    std::uint8_t follow;
+};
+
 struct OverlaySnapshot
 {
     std::string scope;
     bool canFollow = false;
     std::vector<OverlayCard> cards;
     std::string feedback;
+    std::optional<OverlayKeys> keys;
+    std::chrono::seconds nearbyNotificationDuration{ 4 };
 };
 
 class PipeClient
 {
 public:
+    explicit PipeClient(OverlayKeys iniKeys);
+    OverlayKeys Keys() const;
     void Start();
     void SetPanelOpen(bool open);
     OverlaySnapshot Snapshot();
@@ -46,6 +57,8 @@ private:
     };
 
     std::mutex mutex;
+    const OverlayKeys iniKeys;
+    std::atomic<OverlayKeys> activeKeys;
     std::condition_variable changed;
     std::optional<Request> queued;
     bool actionPending = false;

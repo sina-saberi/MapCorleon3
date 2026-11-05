@@ -35,6 +35,23 @@ public sealed class SkyrimOverlayTests
     }
 
     [Fact]
+    public void NearbyCardsRespectTheGameRadiusAndCategoryPreferences()
+    {
+        var nearby = new SkyrimNearbyLocations();
+        var player = new PlayerLocation(0, 0, 0, 0, 0);
+        Location[] locations =
+        [
+            new() { Id = 1, Title = "Cave", Longitude = .001, Category = new Category { Name = "Caves" } },
+            new() { Id = 2, Title = "Chest", Longitude = .0015, Category = new Category { Name = "Loot" } },
+            new() { Id = 3, Title = "Ruin", Longitude = .003, Category = new Category { Name = "Ruins" } },
+        ];
+
+        var preferences = new GameOverlaySettings { NearbyRadius = 1250, ExcludedCategories = ["caves"] };
+        Assert.Equal(2, Assert.Single(nearby.Find(player, locations, preferences)).Id);
+        Assert.Equal(3, nearby.Find(player, locations).Count);
+    }
+
+    [Fact]
     public async Task CollectingTwiceKeepsOneMarkOnTheRequestedTimeline()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

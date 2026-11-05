@@ -4,6 +4,8 @@ namespace MapCorleon.Games.Skyrim;
 
 public static class SkyrimGameIdentity
 {
+    public const string OverlaySettingsKey = "skyrim";
+
     public static bool IsSkyrim(GameMapDescriptor map)
     {
         var game = Normalize(map.GameName);

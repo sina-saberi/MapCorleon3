@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using MapCorleon.Dialogs;
 using MapCorleon.Services;
+using MapCorleon.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MapCorleon.Views;
@@ -42,7 +43,8 @@ public partial class HeaderView : UserControl
         TaskProgress.Value = tasks.Percentage;
         TaskPanel.ToolTip = $"{tasks.ActiveTaskLabel} — {tasks.Percentage}%";
     }
-    private void Settings_Click(object sender, RoutedEventArgs e) => new SettingsDialog { Owner = Owner }.ShowDialog();
+    private void Settings_Click(object sender, RoutedEventArgs e) =>
+        new SettingsDialog((DataContext as ShellViewModel)?.Maps) { Owner = Owner }.ShowDialog();
     private void Import_Click(object sender, RoutedEventArgs e)
     {
         new ImportDialog { Owner = Owner }.ShowDialog();

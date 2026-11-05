@@ -10,9 +10,15 @@ internal sealed class SkyrimNearbyLocations
     private const double ExitRadius = 0.0040;
     private readonly HashSet<int> dismissed = [];
 
-    public IReadOnlyList<Card> Find(PlayerLocation? player, IReadOnlyList<Location> locations)
+    public IReadOnlyList<Card> Find(PlayerLocation? player, IReadOnlyList<Location> locations, GameOverlaySettings? preferences = null)
     {
         if (player is null) return [];
+        preferences ??= GameOverlaySettings.Default;
+        var radiusScale = (double)Math.Clamp(preferences.NearbyRadius, GameOverlaySettings.MinRadius,
+            GameOverlaySettings.MaxRadius) / GameOverlaySettings.DefaultRadius;
+        var enterRadius = EnterRadius * radiusScale;
+        var exitRadius = ExitRadius * radiusScale;
+        var excludedCategories = preferences.ExcludedCategories ?? [];
         var candidates = new List<(Location Location, double DistanceSquared)>();
         var stillNearby = new HashSet<int>();
         foreach (var location in locations)
@@ -20,9 +26,10 @@ internal sealed class SkyrimNearbyLocations
             var x = location.Longitude - player.Longitude;
             var y = location.Latitude - player.Latitude;
             var distanceSquared = x * x + y * y;
-            if (distanceSquared <= ExitRadius * ExitRadius && dismissed.Contains(location.Id))
+            if (distanceSquared <= exitRadius * exitRadius && dismissed.Contains(location.Id))
                 stillNearby.Add(location.Id);
-            else if (distanceSquared <= EnterRadius * EnterRadius && location.Marks.Count == 0)
+            else if (distanceSquared <= enterRadius * enterRadius && location.Marks.Count == 0 &&
+                     !excludedCategories.Contains(location.Category?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase))
                 candidates.Add((location, distanceSquared));
         }
         dismissed.IntersectWith(stillNearby);

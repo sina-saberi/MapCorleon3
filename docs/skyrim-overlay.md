@@ -27,9 +27,10 @@ Use the desktop build from this branch. When testing with a previous MapCorleon 
 
 ## Controls
 
-- Nearby uncollected locations show a four-second notification. A location that stays nearby does not keep refreshing its notification.
+- Nearby uncollected locations show a notification for four seconds by default. A location that stays nearby does not keep refreshing its notification.
 - **F7** opens the panel with up to three nearby uncollected locations. **Collect** marks the location for the active MapCorleon timeline. **X** hides a card until you leave its area. **F7**, **Esc**, and **Close** close the panel and return control to Skyrim.
 - **F8** toggles the desktop map's Follow Player setting and shows a two-second confirmation. Manual map navigation still uses the existing 15-second resume timer.
-- Change the DirectInput scan codes in `Data/SKSE/Plugins/MapCorleonOverlay.ini` and restart Skyrim to use different keys.
+
+Open **Settings → Game overlay** in MapCorleon to choose Skyrim's nearby radius, alert duration, categories, and hotkeys. Category selections apply to alerts and the nearby panel. The updated plugin reads saved settings while Skyrim is running. With custom bindings off, it uses the keys in `Data/SKSE/Plugins/MapCorleonOverlay.ini`, which default to F7 and F8.
 
 To verify in exclusive fullscreen, approach an uncollected marker outdoors. Open the controls, click **X** or **Collect**, then close the overlay. Confirm Skyrim stays in the foreground, the click does not trigger a gameplay action, and mouse-look resumes. Check **Collect** on the active MapCorleon timeline and **F8** against the desktop follow button. Repeat with the other overlays and renderer mods you normally use.

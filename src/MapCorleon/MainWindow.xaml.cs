@@ -12,7 +12,7 @@ public partial class MainWindow : Window
     readonly CancellationTokenSource overlayLifetime = new();
     bool exitRequested;
 
-    public MainWindow(ShellViewModel vm, ITrayService tray, ILogger<MainWindow> overlayLogger)
+    public MainWindow(ShellViewModel vm, ITrayService tray, ISettingsService settings, ILogger<MainWindow> overlayLogger)
     {
         InitializeComponent();
         DataContext = this.vm = vm;
@@ -21,7 +21,7 @@ public partial class MainWindow : Window
         tray.ExitRequested += OnExitRequested;
         Closing += OnClosing;
         Loaded += async (_, _) => await vm.LoadAsync();
-        var overlay = new SkyrimOverlayServer(Dispatcher, vm, DesktopMap.TogglePlayerFollow, overlayLogger);
+        var overlay = new SkyrimOverlayServer(Dispatcher, vm, DesktopMap.TogglePlayerFollow, settings, overlayLogger);
         _ = RunOverlayAsync(overlay);
     }
 
