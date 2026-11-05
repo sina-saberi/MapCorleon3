@@ -24,7 +24,7 @@ dotnet publish src/MapCorleon/MapCorleon.csproj `
   -p:PublishSingleFile=true `
   -p:IncludeNativeLibrariesForSelfExtract=true `
   -p:DebugType=embedded `
-  -o artifacts/MapCorleon-1.0.10-win-x64
+  -o artifacts/MapCorleon-1.0.11-win-x64
 ```
 
 The resulting `MapCorleon.exe` is self-contained. Keep the executable at the

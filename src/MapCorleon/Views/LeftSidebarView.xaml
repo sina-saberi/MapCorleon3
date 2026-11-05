@@ -151,7 +151,7 @@
                 <RowDefinition/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Padding="16,15,16,13" BorderBrush="#2A3749" BorderThickness="0,0,0,1">
+            <Border Grid.Row="0" Padding="16,9" BorderBrush="#2A3749" BorderThickness="0,0,0,1">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                         <GradientStop Color="#182437" Offset="0"/>
@@ -162,10 +162,8 @@
                     <Border DockPanel.Dock="Right" Background="#22334B" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
                         <TextBlock Text="{Binding TotalCount,StringFormat={}{0:N0}}" Foreground="#9CC7FF" FontSize="11" FontWeight="SemiBold"/>
                     </Border>
-                    <StackPanel>
-                        <TextBlock Text="Browse locations" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
-                        <TextBlock Text="{Binding CurrentMap.Name,TargetNullValue=Choose a map}" Foreground="#8295AD" FontSize="11" Margin="0,3,8,0" TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
+                    <TextBlock Text="{Binding CurrentGameName}" FontSize="15" FontWeight="SemiBold" Foreground="White"
+                               Margin="0,0,8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
             </Border>
 
@@ -224,84 +222,81 @@
                         </Grid>
                     </Border>
                 </Button>
-
-                <DockPanel Margin="2,14,2,2">
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding CategoryGroups.Count,StringFormat={}{0} groups}" Foreground="#65778E" FontSize="10"/>
-                    <TextBlock Text="CATEGORIES" Foreground="#7F91A8" FontSize="10" FontWeight="SemiBold"/>
-                </DockPanel>
             </StackPanel>
 
-            <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="12,0,8,12">
-                <StackPanel>
-                    <ItemsControl ItemsSource="{Binding CategoryGroups}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Expander Style="{StaticResource GroupExpander}" IsExpanded="True">
-                                    <Expander.Header>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#D8E2EF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Categories.Count}" Foreground="#6F829A" Margin="8,0" VerticalAlignment="Center"/>
-                                            <Button Grid.Column="2" Content="Toggle all" Padding="7,3" Margin="0" FontSize="10" ToolTip="Show or hide all categories in this group"
-                            Command="{Binding DataContext.ToggleGroupCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Group}"/>
-                                        </Grid>
-                                    </Expander.Header>
-                                    <ItemsControl ItemsSource="{Binding Categories}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Background="#141C27" CornerRadius="4" Margin="0,2" Padding="8,6">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible,Mode=TwoWay}"
-                                  Command="{Binding DataContext.ToggleCategoryCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-                                                        <Border Grid.Column="1" Background="#202D40" CornerRadius="8" Padding="7,2" Margin="8,0,0,0">
-                                                            <TextBlock Text="{Binding ProgressText}" Foreground="#8EA6C2" FontSize="10" ToolTip="Marked / total locations"/>
-                                                        </Border>
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Expander>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <StackPanel Margin="0,8,0,0" Visibility="{Binding IsSearchActive,Converter={StaticResource BoolToVisibility}}">
-                        <DockPanel Margin="2,0,2,8">
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding SearchResults.Count,StringFormat={}{0} found}" Foreground="#6F829A" FontSize="11"/>
-                            <TextBlock Text="SEARCH RESULTS" Foreground="#7F91A8" FontSize="10" FontWeight="SemiBold"/>
-                        </DockPanel>
-                        <ItemsControl ItemsSource="{Binding SearchResults}">
+            <Border Grid.Row="3" Margin="12,0,12,12" Padding="5" BorderBrush="#2A374A" BorderThickness="1" CornerRadius="6">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding CategoryGroups}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button HorizontalContentAlignment="Stretch" Padding="10,9" Margin="0,0,0,5"
-                        Command="{Binding DataContext.SelectCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel>
-                                                <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Foreground="{StaticResource MutedTextBrush}" Text="{Binding Category.Name}" FontSize="11" Margin="0,3,0,0"/>
-                                            </StackPanel>
-                                            <TextBlock Grid.Column="1" Text="›" Foreground="#7EAEED" FontSize="18" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Button>
+                                    <Expander Style="{StaticResource GroupExpander}" IsExpanded="True">
+                                        <Expander.Header>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#D8E2EF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Categories.Count}" Foreground="#6F829A" Margin="8,0" VerticalAlignment="Center"/>
+                                                <Button Grid.Column="2" Content="Toggle all" Padding="7,3" Margin="0" FontSize="10" ToolTip="Show or hide all categories in this group"
+                                Command="{Binding DataContext.ToggleGroupCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Group}"/>
+                                            </Grid>
+                                        </Expander.Header>
+                                        <ItemsControl ItemsSource="{Binding Categories}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#141C27" CornerRadius="4" Margin="0,2" Padding="8,6">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible,Mode=TwoWay}"
+                                      Command="{Binding DataContext.ToggleCategoryCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                                            <Border Grid.Column="1" Background="#202D40" CornerRadius="8" Padding="7,2" Margin="8,0,0,0">
+                                                                <TextBlock Text="{Binding ProgressText}" Foreground="#8EA6C2" FontSize="10" ToolTip="Marked / total locations"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Expander>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <StackPanel Margin="0,8,0,0" Visibility="{Binding IsSearchActive,Converter={StaticResource BoolToVisibility}}">
+                            <DockPanel Margin="2,0,2,8">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding SearchResults.Count,StringFormat={}{0} found}" Foreground="#6F829A" FontSize="11"/>
+                                <TextBlock Text="SEARCH RESULTS" Foreground="#7F91A8" FontSize="10" FontWeight="SemiBold"/>
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding SearchResults}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button HorizontalContentAlignment="Stretch" Padding="10,9" Margin="0,0,0,5"
+                            Command="{Binding DataContext.SelectCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Foreground="{StaticResource MutedTextBrush}" Text="{Binding Category.Name}" FontSize="11" Margin="0,3,0,0"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="›" Foreground="#7EAEED" FontSize="18" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
+                </ScrollViewer>
+            </Border>
         </Grid>
     </Border>
 </UserControl>

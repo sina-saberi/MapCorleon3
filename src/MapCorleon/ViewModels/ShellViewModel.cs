@@ -129,6 +129,9 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(Query);
     public string? CurrentMapName => currentMapName;
+    public string CurrentGameName => CurrentMap?.Game?.Name is { } name && !string.IsNullOrWhiteSpace(name)
+        ? name
+        : CurrentMap?.Name ?? "Choose a map";
     public bool IsAllFilter => MarkFilter == MarkFilter.All;
     public bool IsMarkedFilter => MarkFilter == MarkFilter.Marked;
     public bool IsUnmarkedFilter => MarkFilter == MarkFilter.Unmarked;
@@ -166,6 +169,7 @@ public sealed class ShellViewModel : ViewModelBase
         private set
         {
             if (!Set(ref currentMap, value)) return;
+            OnPropertyChanged(nameof(CurrentGameName));
             OnPropertyChanged(nameof(IsPlayerTrackingSupported));
             OnPropertyChanged(nameof(CanLaunchGame));
             ((RelayCommand)LaunchGameCommand).RaiseCanExecuteChanged();
