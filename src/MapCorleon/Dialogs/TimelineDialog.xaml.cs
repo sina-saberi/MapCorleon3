@@ -27,8 +27,9 @@ public partial class TimelineDialog : Window
 
     private void RefreshCards()
     {
+        var canDelete = shell.Timelines.Count > 1;
         TimelineCards.ItemsSource = shell.Timelines.Select(timeline =>
-            new TimelineCard(timeline, timeline.Id == shell.SelectedTimeline?.Id)).ToArray();
+            new TimelineCard(timeline, timeline.Id == shell.SelectedTimeline?.Id, canDelete)).ToArray();
         EmptyMessage.Visibility = shell.Timelines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         AddButton.IsEnabled = shell.CurrentMap is not null;
     }
@@ -68,7 +69,7 @@ public partial class TimelineDialog : Window
 
     private async void Delete_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { DataContext: TimelineCard card }) return;
+        if (shell.Timelines.Count <= 1 || sender is not FrameworkElement { DataContext: TimelineCard card }) return;
         var timeline = card.Timeline;
         var confirm = MessageBox.Show(this, $"Delete “{timeline.Name}” and its progress, pins, and custom locations?",
             "Delete timeline", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
@@ -111,5 +112,5 @@ public partial class TimelineDialog : Window
         if (busy) e.Cancel = true;
     }
 
-    private sealed record TimelineCard(Timeline Timeline, bool IsActive);
+    private sealed record TimelineCard(Timeline Timeline, bool IsActive, bool CanDelete);
 }

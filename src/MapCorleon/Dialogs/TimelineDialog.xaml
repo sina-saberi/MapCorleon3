@@ -76,7 +76,8 @@
                     <TextBlock Text="{Binding Timeline.Name}" TextTrimming="CharacterEllipsis"/>
                   </RadioButton>
                   <Button Grid.Column="1" Content="Edit" Click="Edit_Click"/>
-                  <Button Grid.Column="2" Content="Delete" Click="Delete_Click"/>
+                  <Button Grid.Column="2" Content="Delete" Click="Delete_Click"
+                          Visibility="{Binding CanDelete, Converter={StaticResource BoolToVisibility}}"/>
                 </Grid>
               </Border>
             </DataTemplate>
