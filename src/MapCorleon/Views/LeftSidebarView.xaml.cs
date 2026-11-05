@@ -13,7 +13,7 @@ public partial class LeftSidebarView : UserControl
     {
         if (DataContext is not ShellViewModel shell) return;
 
-        new ProgressDialog(shell.Groups)
+        new ProgressDialog(shell)
         {
             Owner = Window.GetWindow(this)
         }.ShowDialog();

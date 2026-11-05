@@ -6,7 +6,7 @@
   <Window.Resources>
     <ResourceDictionary Source="/MapCorleon;component/Styles/CategoryGroupStyles.xaml"/>
   </Window.Resources>
-  <Grid Background="{StaticResource WindowBrush}">
+  <Grid x:Name="DialogContent" Background="{StaticResource WindowBrush}">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
@@ -75,9 +75,9 @@
                   <Border Background="#141C27" CornerRadius="4" Margin="0,2" Padding="8,6">
                     <Grid>
                       <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                      <CheckBox Content="{Binding Name}" IsChecked="True"/>
+                      <CheckBox Content="{Binding Category.Name}" IsChecked="{Binding IsIncluded, Mode=TwoWay}"/>
                       <Border Grid.Column="1" Background="#202D40" CornerRadius="8" Padding="7,2" Margin="8,0,0,0">
-                        <TextBlock Text="{Binding ProgressText}" Foreground="#8EA6C2" FontSize="10"
+                        <TextBlock Text="{Binding Category.ProgressText}" Foreground="#8EA6C2" FontSize="10"
                                    ToolTip="Marked / total locations"/>
                       </Border>
                     </Grid>
@@ -106,7 +106,7 @@
     <Border Grid.Row="3" Background="#151B25" BorderBrush="#303C4E" BorderThickness="0,1,0,0" Padding="14,10">
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
         <Button Content="Cancel" IsCancel="True" MinWidth="82"/>
-        <Button Content="Apply" IsDefault="True" Click="Apply_Click" MinWidth="82" Background="#315B9C"/>
+        <Button Content="Save" IsDefault="True" Click="Save_Click" MinWidth="82" Background="#315B9C"/>
       </StackPanel>
     </Border>
   </Grid>

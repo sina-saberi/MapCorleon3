@@ -10,7 +10,7 @@
     </Border>
     <Button x:Name="FollowPlayerButton" HorizontalAlignment="Right" VerticalAlignment="Bottom"
             Margin="16" Padding="14,9" Click="FollowPlayer_Click" IsEnabled="False"
-            ToolTip="Center on the player and keep following until you move the map">
+            ToolTip="Toggle player follow. After moving the map, follow resumes after 15 seconds.">
       <StackPanel Orientation="Horizontal">
         <TextBlock Text="⌾" FontSize="17" Margin="0,0,7,0"/>
         <TextBlock x:Name="FollowPlayerText" Text="Follow player" VerticalAlignment="Center"/>

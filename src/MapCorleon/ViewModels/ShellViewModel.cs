@@ -25,6 +25,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly DispatcherTimer searchTimer;
 
     private List<Location> allLocations = [];
+    private (int Picked, int Total) trackedProgress;
     private IReadOnlyList<CategoryGroupViewModel> categoryGroups = [];
     private string query = string.Empty;
     private bool isLoading;
@@ -132,9 +133,10 @@ public sealed class ShellViewModel : ViewModelBase
     public string MarkActionText => SelectedLocation?.Marks.Count > 0 ? "Unmark" : "Mark";
     public int PickedCount => allLocations.Count(location => location.Marks.Count > 0);
     public int TotalCount => allLocations.Count;
-    public string ProgressText => $"{PickedCount} locations picked from {TotalCount} total";
-    public string ProgressSummary => $"{PickedCount:N0} of {TotalCount:N0} marked";
-    public int ProgressPercentage => TotalCount == 0 ? 0 : (int)Math.Round(PickedCount * 100d / TotalCount);
+    public string ProgressText => $"{trackedProgress.Picked} locations picked from {trackedProgress.Total} total";
+    public string ProgressSummary => $"{trackedProgress.Picked:N0} of {trackedProgress.Total:N0} marked";
+    public int ProgressPercentage => trackedProgress.Total == 0 ? 0 : (int)Math.Round(trackedProgress.Picked * 100d / trackedProgress.Total);
+    public IReadOnlySet<int> ExcludedProgressCategoryIds => settingsService.Current.ExcludedProgressCategoryIds;
     public PlayerLocation? LivePlayerLocation => playerLocationCoordinator.CurrentLocation;
     public string PlayerTrackingStatusText => playerLocationCoordinator.StatusText;
     public bool IsPlayerTrackingSupported => CurrentMap is not null && playerLocationCoordinator.Supports(CurrentMap);
@@ -258,6 +260,20 @@ public sealed class ShellViewModel : ViewModelBase
 
     public void SelectLocationById(int id) => SelectedLocation = allLocations.FirstOrDefault(location => location.Id == id);
 
+    public async Task SaveProgressCategoriesAsync(IReadOnlyDictionary<int, bool> selections)
+    {
+        var settings = settingsService.Current;
+        var excludedCategoryIds = new HashSet<int>(settings.ExcludedProgressCategoryIds);
+        foreach (var (categoryId, included) in selections)
+        {
+            if (included) excludedCategoryIds.Remove(categoryId);
+            else excludedCategoryIds.Add(categoryId);
+        }
+
+        await settingsService.SaveAsync(settings with { ExcludedProgressCategoryIds = excludedCategoryIds });
+        UpdateTrackedProgress();
+    }
+
     public void FocusSelectedLocation()
     {
         if (SelectedLocation is not null) OnPropertyChanged(nameof(SelectedLocation));
@@ -317,6 +333,21 @@ public sealed class ShellViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(PickedCount));
         OnPropertyChanged(nameof(TotalCount));
+    }
+
+    private void UpdateTrackedProgress()
+    {
+        var excluded = ExcludedProgressCategoryIds;
+        var picked = 0;
+        var total = 0;
+        foreach (var location in allLocations)
+        {
+            if (excluded.Contains(location.CategoryId)) continue;
+            total++;
+            if (location.Marks.Count > 0) picked++;
+        }
+
+        trackedProgress = (picked, total);
         OnPropertyChanged(nameof(ProgressText));
         OnPropertyChanged(nameof(ProgressSummary));
         OnPropertyChanged(nameof(ProgressPercentage));
@@ -395,6 +426,7 @@ public sealed class ShellViewModel : ViewModelBase
 
     private void UpdateCategoryProgress()
     {
+        UpdateTrackedProgress();
         var counts = allLocations
             .GroupBy(location => location.CategoryId)
             .ToDictionary(

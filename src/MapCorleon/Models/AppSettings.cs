@@ -10,6 +10,8 @@ public sealed record AppSettings(
     string? CurrentMapName = null,
     int? CurrentTimelineId = null)
 {
+    public HashSet<int> ExcludedProgressCategoryIds { get; init; } = [];
+
     [JsonIgnore] public string TileDirectory => Path.Combine(DataDirectory, "tiles");
     [JsonIgnore] public string StorageDirectory => Path.Combine(DataDirectory, "storage");
     [JsonIgnore] public string DatabasePath => Path.Combine(DataDirectory, "mapcorleon.db");

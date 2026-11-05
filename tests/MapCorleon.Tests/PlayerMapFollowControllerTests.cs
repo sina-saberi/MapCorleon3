@@ -14,17 +14,33 @@ public sealed class PlayerMapFollowControllerTests
     }
 
     [Fact]
-    public void ToggleEnablesFollowAndUserNavigationStopsIt()
+    public void UserNavigationPausesCenteringUntilFollowResumes()
     {
         var controller = new PlayerMapFollowController();
         controller.SetPlayerAvailable(true);
 
         Assert.True(controller.Toggle());
-        Assert.True(controller.IsFollowing);
+        Assert.True(controller.ShouldCenter);
 
-        controller.StopFollowing();
-        Assert.False(controller.IsFollowing);
-        Assert.True(controller.CanFollow);
+        controller.Pause();
+        Assert.True(controller.IsFollowing);
+        Assert.False(controller.ShouldCenter);
+
+        controller.Resume();
+        Assert.True(controller.ShouldCenter);
+    }
+
+    [Fact]
+    public void TurningFollowOffWhilePausedPreventsResume()
+    {
+        var controller = new PlayerMapFollowController();
+        controller.SetPlayerAvailable(true);
+        controller.Toggle();
+        controller.Pause();
+
+        Assert.False(controller.Toggle());
+        controller.Resume();
+        Assert.False(controller.ShouldCenter);
     }
 
     [Fact]
@@ -33,10 +49,12 @@ public sealed class PlayerMapFollowControllerTests
         var controller = new PlayerMapFollowController();
         controller.SetPlayerAvailable(true);
         controller.Toggle();
+        controller.Pause();
 
         controller.SetPlayerAvailable(false);
 
         Assert.False(controller.CanFollow);
         Assert.False(controller.IsFollowing);
+        Assert.False(controller.IsPaused);
     }
 }

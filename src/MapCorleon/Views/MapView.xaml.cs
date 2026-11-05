@@ -33,6 +33,7 @@ public partial class MapView
     private GlobalSphericalMercator? tileSchema;
     private string? spriteSource;
     private readonly DispatcherTimer markerRefreshTimer;
+    private readonly DispatcherTimer followResumeTimer;
     private readonly PlayerMapFollowController playerFollow = new();
 
     public MapView()
@@ -40,11 +41,24 @@ public partial class MapView
         InitializeComponent();
         MapControl.MapTapped += MapTapped;
         MapControl.MapPointerMoved += MapPointerMoved;
-        MapControl.PreviewMouseWheel += (_, _) => StopFollowingForUserNavigation();
+        MapControl.PreviewMouseDown += (_, _) => PauseFollowingForUserNavigation();
+        MapControl.PreviewMouseWheel += (_, _) => PauseFollowingForUserNavigation();
+        followResumeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+        followResumeTimer.Tick += (_, _) =>
+        {
+            followResumeTimer.Stop();
+            playerFollow.Resume();
+            RefreshFollowButton();
+            if (playerFollow.ShouldCenter) CenterOnPlayer();
+        };
         markerRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
         markerRefreshTimer.Tick += (_, _) => { markerRefreshTimer.Stop(); RebuildLocations(); };
         Loaded += (_, _) => Attach();
-        Unloaded += (_, _) => Detach();
+        Unloaded += (_, _) =>
+        {
+            playerFollow.StopFollowing();
+            Detach();
+        };
         DataContextChanged += (_, _) => Attach();
     }
 
@@ -60,6 +74,8 @@ public partial class MapView
 
     private void Detach()
     {
+        followResumeTimer.Stop();
+        playerFollow.Resume();
         if (viewModel is not null)
         {
             viewModel.PropertyChanged -= ViewModelChanged;
@@ -73,12 +89,13 @@ public partial class MapView
         if (e.PropertyName == nameof(ShellViewModel.CurrentMapConfig))
         {
             playerFollow.StopFollowing();
+            followResumeTimer.Stop();
             RebuildMap();
         }
         else if (e.PropertyName == nameof(ShellViewModel.LivePlayerLocation)) RebuildPlayerMarker();
         else if (e.PropertyName == nameof(ShellViewModel.SelectedLocation) && viewModel?.SelectedLocation is { } location)
         {
-            StopFollowingForUserNavigation();
+            PauseFollowingForUserNavigation();
             var point = SphericalMercator.FromLonLat(location.Longitude, location.Latitude);
             MapControl.Map?.Navigator.CenterOn(new MPoint(point.x, point.y), 350);
         }
@@ -193,6 +210,7 @@ public partial class MapView
 
         var player = viewModel?.LivePlayerLocation;
         playerFollow.SetPlayerAvailable(player is not null);
+        if (player is null) followResumeTimer.Stop();
         RefreshFollowButton();
         if (player is null) return;
         var coordinates = SphericalMercator.FromLonLat(player.Longitude, player.Latitude);
@@ -205,13 +223,14 @@ public partial class MapView
         });
         playerLayer = new MemoryLayer("Live player") { Features = [feature], Style = null };
         map.Layers.Add(playerLayer);
-        if (playerFollow.IsFollowing)
+        if (playerFollow.ShouldCenter)
             map.Navigator.CenterOn(new MPoint(coordinates.x, coordinates.y), 250);
         map.RefreshData();
     }
 
     private void FollowPlayer_Click(object sender, System.Windows.RoutedEventArgs e)
     {
+        followResumeTimer.Stop();
         var following = playerFollow.Toggle();
         RefreshFollowButton();
         if (following) CenterOnPlayer();
@@ -226,20 +245,26 @@ public partial class MapView
 
     private void MapPointerMoved(object? sender, MapEventArgs e)
     {
-        if (e.GestureType == GestureType.Drag) StopFollowingForUserNavigation();
+        if (e.GestureType == GestureType.Drag) PauseFollowingForUserNavigation();
     }
 
-    private void StopFollowingForUserNavigation()
+    private void PauseFollowingForUserNavigation()
     {
         if (!playerFollow.IsFollowing) return;
-        playerFollow.StopFollowing();
-        RefreshFollowButton();
+        if (!playerFollow.IsPaused)
+        {
+            playerFollow.Pause();
+            RefreshFollowButton();
+        }
+        followResumeTimer.Stop();
+        followResumeTimer.Start();
     }
 
     private void RefreshFollowButton()
     {
         FollowPlayerButton.IsEnabled = playerFollow.CanFollow;
-        FollowPlayerText.Text = playerFollow.IsFollowing ? "Following player" : "Follow player";
+        FollowPlayerText.Text = playerFollow.IsPaused ? "Follow paused"
+            : playerFollow.IsFollowing ? "Following player" : "Follow player";
         FollowPlayerButton.Background = playerFollow.IsFollowing
             ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(49, 91, 156))
             : (System.Windows.Media.Brush)FindResource("RaisedBrush");
@@ -264,7 +289,7 @@ public partial class MapView
 
     private void MapTapped(object? sender, MapEventArgs e)
     {
-        if (e.GestureType == GestureType.DoubleTap) StopFollowingForUserNavigation();
+        PauseFollowingForUserNavigation();
         var picker = App.Services.GetRequiredService<IMapPickService>();
         if (picker.IsPicking)
         {
