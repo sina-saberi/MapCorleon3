@@ -7,14 +7,23 @@
       <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
       <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="ItemsPanel">
+        <Setter.Value>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal"/>
+          </ItemsPanelTemplate>
+        </Setter.Value>
+      </Setter>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="TabControl">
             <DockPanel>
-              <TabPanel DockPanel.Dock="Top" IsItemsHost="True" Margin="0,0,0,6" KeyboardNavigation.TabIndex="1"/>
+              <ItemsPresenter DockPanel.Dock="Top" Margin="0,0,0,6" KeyboardNavigation.TabNavigation="Once"/>
               <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                       BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"/>
+                <ScrollViewer MaxHeight="380" VerticalScrollBarVisibility="Auto">
+                  <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"/>
+                </ScrollViewer>
               </Border>
             </DockPanel>
           </ControlTemplate>
@@ -70,36 +79,36 @@
       </TabItem>
       <TabItem Header="Game overlay">
         <StackPanel Margin="12">
-          <TextBlock Text="Game"/>
-          <ComboBox Margin="0,4,0,10" SelectedIndex="0">
-            <ComboBoxItem Content="Skyrim Special Edition"/>
-          </ComboBox>
-          <UniformGrid Columns="2">
-            <StackPanel Margin="0,0,8,0">
-              <TextBlock Text="Nearby radius (Skyrim units)"/>
-              <TextBox x:Name="NearbyRadius" Margin="0,4,0,0"/>
-            </StackPanel>
-            <StackPanel Margin="8,0,0,0">
-              <TextBlock Text="Nearby notification duration (seconds)"/>
-              <TextBox x:Name="NotificationSeconds" Margin="0,4,0,0"/>
-            </StackPanel>
-          </UniformGrid>
-          <CheckBox x:Name="CustomKeys" Content="Set keybindings in MapCorleon" Margin="0,12,0,4"/>
-          <UniformGrid Columns="2" IsEnabled="{Binding IsChecked, ElementName=CustomKeys}">
-            <StackPanel Margin="0,0,8,0">
-              <TextBlock Text="Open overlay panel"/>
-              <ComboBox x:Name="PanelKey" DisplayMemberPath="Name" SelectedValuePath="ScanCode" Margin="0,4,0,0"/>
-            </StackPanel>
-            <StackPanel Margin="8,0,0,0">
-              <TextBlock Text="Toggle Follow Player"/>
-              <ComboBox x:Name="FollowKey" DisplayMemberPath="Name" SelectedValuePath="ScanCode" Margin="0,4,0,0"/>
-            </StackPanel>
-          </UniformGrid>
-          <TextBlock Text="Choose two different function keys. When unchecked, the plugin uses its INI bindings."
-                     Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,5,0,12"/>
-          <TextBlock Text="Categories shown in alerts and the nearby panel"/>
-          <TextBlock x:Name="CategoryStatus" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-          <ScrollViewer MaxHeight="130" VerticalScrollBarVisibility="Auto">
+          <TextBlock x:Name="OverlayMapName" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10"/>
+          <TextBlock x:Name="OverlayUnavailable" Foreground="{StaticResource MutedTextBrush}"
+                     TextWrapping="Wrap" Visibility="Collapsed"/>
+          <StackPanel x:Name="OverlayOptions">
+            <UniformGrid Columns="2">
+              <StackPanel Margin="0,0,8,0">
+                <TextBlock Text="Nearby radius (Skyrim units)"/>
+                <TextBox x:Name="NearbyRadius" Margin="0,4,0,0"/>
+              </StackPanel>
+              <StackPanel Margin="8,0,0,0">
+                <TextBlock Text="Nearby notification duration (seconds)"/>
+                <TextBox x:Name="NotificationSeconds" Margin="0,4,0,0"/>
+              </StackPanel>
+            </UniformGrid>
+            <CheckBox x:Name="CustomKeys" Content="Set keybindings in MapCorleon" Margin="0,12,0,4"/>
+            <UniformGrid Columns="2" IsEnabled="{Binding IsChecked, ElementName=CustomKeys}">
+              <StackPanel Margin="0,0,8,0">
+                <TextBlock Text="Open overlay panel"/>
+                <ComboBox x:Name="PanelKey" DisplayMemberPath="Name" SelectedValuePath="ScanCode" Margin="0,4,0,0"/>
+              </StackPanel>
+              <StackPanel Margin="8,0,0,0">
+                <TextBlock Text="Toggle Follow Player"/>
+                <ComboBox x:Name="FollowKey" DisplayMemberPath="Name" SelectedValuePath="ScanCode" Margin="0,4,0,0"/>
+              </StackPanel>
+            </UniformGrid>
+            <TextBlock Text="Choose two different function keys. When unchecked, the plugin uses its INI bindings."
+                       Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,5,0,12"/>
+            <TextBlock Text="Categories shown in alerts and the nearby panel"/>
+            <TextBlock x:Name="CategoryStatus" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                       Margin="0,4,0,0" Visibility="Collapsed"/>
             <ItemsControl x:Name="CategoryList" Margin="0,4,0,0">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
@@ -107,7 +116,7 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-          </ScrollViewer>
+          </StackPanel>
         </StackPanel>
       </TabItem>
     </TabControl>

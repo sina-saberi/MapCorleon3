@@ -15,20 +15,32 @@ public partial class SettingsDialog : Window
 {
     private readonly ISettingsService settings;
     private readonly string originalDirectory;
-    private readonly GameOverlaySettings originalOverlay;
-    private readonly HashSet<string> excludedCategories;
+    private readonly string? overlaySettingsKey;
+    private readonly HashSet<string> excludedCategories = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyList<CategoryChoice> categories = [];
     private bool isSaving;
 
-    public SettingsDialog(IEnumerable<Map>? maps = null)
+    public SettingsDialog(Map? activeMap = null)
     {
         InitializeComponent();
         settings = App.Services.GetRequiredService<ISettingsService>();
         originalDirectory = settings.Current.DataDirectory;
         DataDirectory.Text = originalDirectory;
-        originalOverlay = settings.Current.GameOverlays.GetValueOrDefault(SkyrimGameIdentity.OverlaySettingsKey)
+        OverlayMapName.Text = activeMap?.DisplayName ?? "No active map";
+        if (activeMap is null || !SkyrimGameIdentity.IsWorldMap(GameMapDescriptorFactory.Create(activeMap)))
+        {
+            OverlayOptions.Visibility = Visibility.Collapsed;
+            OverlayUnavailable.Text = activeMap is null
+                ? "Open a supported map to change its game overlay settings."
+                : "The game overlay is unavailable for this map.";
+            OverlayUnavailable.Visibility = Visibility.Visible;
+            return;
+        }
+
+        overlaySettingsKey = SkyrimGameIdentity.OverlaySettingsKey;
+        var originalOverlay = settings.Current.GameOverlays.GetValueOrDefault(overlaySettingsKey)
             ?? GameOverlaySettings.Default;
-        excludedCategories = (originalOverlay.ExcludedCategories ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        excludedCategories.UnionWith(originalOverlay.ExcludedCategories ?? []);
         NearbyRadius.Text = originalOverlay.NearbyRadius.ToString();
         NotificationSeconds.Text = originalOverlay.NearbyNotificationSeconds.ToString();
         CustomKeys.IsChecked = originalOverlay.PanelScanCode.HasValue && originalOverlay.FollowScanCode.HasValue;
@@ -40,20 +52,19 @@ public partial class SettingsDialog : Window
         PanelKey.SelectedValue = originalOverlay.PanelScanCode ?? 0x41;
         FollowKey.SelectedValue = originalOverlay.FollowScanCode ?? 0x42;
 
-        var mapIds = maps?.Where(map => SkyrimGameIdentity.IsWorldMap(GameMapDescriptorFactory.Create(map)))
-            .Select(map => map.Id).ToArray() ?? [];
-        Loaded += async (_, _) => await LoadCategoriesAsync(mapIds);
+        Loaded += async (_, _) => await LoadCategoriesAsync(activeMap.Id);
     }
 
-    private async Task LoadCategoriesAsync(int[] mapIds)
+    private async Task LoadCategoriesAsync(int mapId)
     {
         CategoryStatus.Text = "Loading categories…";
+        CategoryStatus.Visibility = Visibility.Visible;
         try
         {
             var factory = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
             await using var db = await factory.CreateDbContextAsync();
             var names = await db.Categories.AsNoTracking()
-                .Where(category => mapIds.Contains(category.Group!.MapId))
+                .Where(category => category.Group!.MapId == mapId)
                 .Select(category => category.Name)
                 .Distinct()
                 .ToListAsync();
@@ -61,7 +72,8 @@ public partial class SettingsDialog : Window
                 .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
                 .Select(name => new CategoryChoice(name, !excludedCategories.Contains(name))).ToList();
             CategoryList.ItemsSource = categories;
-            CategoryStatus.Text = categories.Count == 0 ? "Import the Skyrim map to choose its categories." : string.Empty;
+            CategoryStatus.Text = "This map has no categories yet.";
+            CategoryStatus.Visibility = categories.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         catch (Exception ex)
         {
@@ -86,49 +98,24 @@ public partial class SettingsDialog : Window
             MessageBox.Show(this, "Choose a data directory.", "Settings");
             return;
         }
-        if (!int.TryParse(NearbyRadius.Text, out var radius) || radius is < GameOverlaySettings.MinRadius or > GameOverlaySettings.MaxRadius)
-        {
-            MessageBox.Show(this, $"Enter a nearby radius from {GameOverlaySettings.MinRadius} to {GameOverlaySettings.MaxRadius}.", "Settings");
-            return;
-        }
-        if (!int.TryParse(NotificationSeconds.Text, out var seconds) ||
-            seconds is < GameOverlaySettings.MinNotificationSeconds or > GameOverlaySettings.MaxNotificationSeconds)
-        {
-            MessageBox.Show(this, $"Enter a notification duration from {GameOverlaySettings.MinNotificationSeconds} to {GameOverlaySettings.MaxNotificationSeconds} seconds.", "Settings");
-            return;
-        }
-        var panelScanCode = PanelKey.SelectedValue as int?;
-        var followScanCode = FollowKey.SelectedValue as int?;
-        if (CustomKeys.IsChecked == true && (!panelScanCode.HasValue || !followScanCode.HasValue || panelScanCode == followScanCode))
-        {
-            MessageBox.Show(this, "Choose two different keys for the overlay panel and Follow Player.", "Settings");
-            return;
-        }
-        var exclusions = new HashSet<string>(excludedCategories, StringComparer.OrdinalIgnoreCase);
-        foreach (var category in categories)
-        {
-            if (category.Included) exclusions.Remove(category.Name);
-            else exclusions.Add(category.Name);
-        }
+        GameOverlaySettings? overlay = null;
+        if (overlaySettingsKey is not null && !TryReadOverlaySettings(out overlay)) return;
 
         isSaving = true;
         DialogContent.IsEnabled = false;
         try
         {
             var fullPath = Path.GetFullPath(DataDirectory.Text.Trim());
-            var current = settings.Current;
-            var gameOverlays = new Dictionary<string, GameOverlaySettings>(current.GameOverlays, StringComparer.Ordinal)
+            var updated = settings.Current with { DataDirectory = fullPath };
+            if (overlaySettingsKey is not null && overlay is not null)
             {
-                [SkyrimGameIdentity.OverlaySettingsKey] = originalOverlay with
+                var gameOverlays = new Dictionary<string, GameOverlaySettings>(updated.GameOverlays, StringComparer.Ordinal)
                 {
-                    NearbyRadius = radius,
-                    NearbyNotificationSeconds = seconds,
-                    PanelScanCode = CustomKeys.IsChecked == true ? panelScanCode : null,
-                    FollowScanCode = CustomKeys.IsChecked == true ? followScanCode : null,
-                    ExcludedCategories = exclusions.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray()
-                }
-            };
-            await settings.SaveAsync(current with { DataDirectory = fullPath, GameOverlays = gameOverlays });
+                    [overlaySettingsKey] = overlay
+                };
+                updated = updated with { GameOverlays = gameOverlays };
+            }
+            await settings.SaveAsync(updated);
             if (!string.Equals(fullPath, originalDirectory, StringComparison.OrdinalIgnoreCase))
                 MessageBox.Show(this, "The new data directory will be used after restarting MapCorleon. Existing files were not moved.", "Restart required");
         }
@@ -143,6 +130,45 @@ public partial class SettingsDialog : Window
             DialogContent.IsEnabled = true;
         }
         DialogResult = true;
+    }
+
+    private bool TryReadOverlaySettings(out GameOverlaySettings? overlay)
+    {
+        overlay = null;
+        if (!int.TryParse(NearbyRadius.Text, out var radius) || radius is < GameOverlaySettings.MinRadius or > GameOverlaySettings.MaxRadius)
+        {
+            MessageBox.Show(this, $"Enter a nearby radius from {GameOverlaySettings.MinRadius} to {GameOverlaySettings.MaxRadius}.", "Settings");
+            return false;
+        }
+        if (!int.TryParse(NotificationSeconds.Text, out var seconds) ||
+            seconds is < GameOverlaySettings.MinNotificationSeconds or > GameOverlaySettings.MaxNotificationSeconds)
+        {
+            MessageBox.Show(this, $"Enter a notification duration from {GameOverlaySettings.MinNotificationSeconds} to {GameOverlaySettings.MaxNotificationSeconds} seconds.", "Settings");
+            return false;
+        }
+        var panelScanCode = PanelKey.SelectedValue as int?;
+        var followScanCode = FollowKey.SelectedValue as int?;
+        if (CustomKeys.IsChecked == true && (!panelScanCode.HasValue || !followScanCode.HasValue || panelScanCode == followScanCode))
+        {
+            MessageBox.Show(this, "Choose two different keys for the overlay panel and Follow Player.", "Settings");
+            return false;
+        }
+        var exclusions = new HashSet<string>(excludedCategories, StringComparer.OrdinalIgnoreCase);
+        foreach (var category in categories)
+        {
+            if (category.Included) exclusions.Remove(category.Name);
+            else exclusions.Add(category.Name);
+        }
+
+        overlay = new GameOverlaySettings
+        {
+            NearbyRadius = radius,
+            NearbyNotificationSeconds = seconds,
+            PanelScanCode = CustomKeys.IsChecked == true ? panelScanCode : null,
+            FollowScanCode = CustomKeys.IsChecked == true ? followScanCode : null,
+            ExcludedCategories = exclusions.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray()
+        };
+        return true;
     }
 
     protected override void OnClosing(CancelEventArgs e)

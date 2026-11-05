@@ -44,7 +44,7 @@ public partial class HeaderView : UserControl
         TaskPanel.ToolTip = $"{tasks.ActiveTaskLabel} — {tasks.Percentage}%";
     }
     private void Settings_Click(object sender, RoutedEventArgs e) =>
-        new SettingsDialog((DataContext as ShellViewModel)?.Maps) { Owner = Owner }.ShowDialog();
+        new SettingsDialog((DataContext as ShellViewModel)?.CurrentMap) { Owner = Owner }.ShowDialog();
     private void Import_Click(object sender, RoutedEventArgs e)
     {
         new ImportDialog { Owner = Owner }.ShowDialog();
