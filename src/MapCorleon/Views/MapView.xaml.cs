@@ -291,11 +291,17 @@ public partial class MapView
     private void RefreshFollowButton()
     {
         FollowPlayerButton.IsEnabled = playerFollow.CanFollow;
-        FollowPlayerText.Text = playerFollow.IsPaused ? "Follow paused"
+        FollowTargetIcon.Visibility = playerFollow.IsPaused ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+        FollowPausedIcon.Visibility = playerFollow.IsPaused ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        var state = playerFollow.IsPaused ? "Follow paused"
             : playerFollow.IsFollowing ? "Following player" : "Follow player";
-        FollowPlayerButton.Background = playerFollow.IsFollowing
-            ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(49, 91, 156))
-            : (System.Windows.Media.Brush)FindResource("RaisedBrush");
+        System.Windows.Automation.AutomationProperties.SetName(FollowPlayerButton, state);
+        FollowPlayerButton.ToolTip = playerFollow.IsPaused
+            ? "Follow paused. Tracking resumes 15 seconds after moving the map."
+            : playerFollow.IsFollowing ? "Following player. Click to stop following." : "Follow player";
+        var background = playerFollow.IsPaused ? "FollowPausedBrush"
+            : playerFollow.IsFollowing ? "FollowingBrush" : "RaisedBrush";
+        FollowPlayerButton.Background = (System.Windows.Media.Brush)FindResource(background);
     }
 
     private static IStyle CreateLocationStyle(Category? category, string? spritePath, bool marked)
