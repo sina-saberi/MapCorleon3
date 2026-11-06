@@ -7,8 +7,11 @@ namespace MapCorleon.Tests;
 
 public sealed class PlayerLocationCoordinatorTests
 {
-    [Fact]
-    public async Task HidesLocationIndoorsAndRestoresItOutdoors()
+    [Theory]
+    [InlineData(PlayerLocationReadStatus.Interior, PlayerTrackingState.PlayerIsInterior, "Player is indoors")]
+    [InlineData(PlayerLocationReadStatus.OutsideSupportedWorldspace, PlayerTrackingState.OutsideSupportedWorldspace, "Player is outside the selected map")]
+    public async Task ClearsLocationInUnsupportedAreasAndRestoresItInTheSupportedMap(
+        PlayerLocationReadStatus readStatus, PlayerTrackingState state, string statusText)
     {
         var exterior = new PlayerLocation(1.1, -1.0, 100, 200, 300);
         var provider = new FakeProvider { Result = PlayerLocationReadResult.Success(exterior) };
@@ -19,17 +22,14 @@ public sealed class PlayerLocationCoordinatorTests
         await coordinator.StartAsync(CancellationToken.None);
         await coordinator.SetActiveMapAsync(SkyrimPlayerLocationProviderTests.CreateMap("Skyrim", "Skyrim"));
 
-        await WaitUntilAsync(() => coordinator.State == PlayerTrackingState.TrackingPlayer);
-        Assert.Equal(exterior, coordinator.CurrentLocation);
+        await WaitUntilAsync(() => coordinator.State == PlayerTrackingState.TrackingPlayer && coordinator.CurrentLocation == exterior);
 
-        provider.Result = new PlayerLocationReadResult(PlayerLocationReadStatus.Interior);
-        await WaitUntilAsync(() => coordinator.State == PlayerTrackingState.PlayerIsInterior);
-        Assert.Null(coordinator.CurrentLocation);
-        Assert.Equal("Player is indoors", coordinator.StatusText);
+        provider.Result = new PlayerLocationReadResult(readStatus);
+        await WaitUntilAsync(() => coordinator.State == state && coordinator.CurrentLocation is null);
+        Assert.Equal(statusText, coordinator.StatusText);
 
         provider.Result = PlayerLocationReadResult.Success(exterior);
-        await WaitUntilAsync(() => coordinator.State == PlayerTrackingState.TrackingPlayer);
-        Assert.Equal(exterior, coordinator.CurrentLocation);
+        await WaitUntilAsync(() => coordinator.State == PlayerTrackingState.TrackingPlayer && coordinator.CurrentLocation == exterior);
         await coordinator.StopAsync(CancellationToken.None);
     }
 

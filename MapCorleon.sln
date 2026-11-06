@@ -12,6 +12,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Games.Skyrim", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Tests", "tests\MapCorleon.Tests\MapCorleon.Tests.csproj", "{B4A65578-62DD-4F57-9F63-357A5388BC2F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Games.Fallout4", "src\MapCorleon.Games.Fallout4\MapCorleon.Games.Fallout4.csproj", "{DFA288EC-BE8A-4226-99FB-7A25F27811AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapCorleon.Fallout4Probe", "tools\MapCorleon.Fallout4Probe\MapCorleon.Fallout4Probe.csproj", "{BEC004BE-29F1-4E87-B9FE-5E2E47EE2785}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,5 +42,13 @@ Global
 		{B4A65578-62DD-4F57-9F63-357A5388BC2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4A65578-62DD-4F57-9F63-357A5388BC2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4A65578-62DD-4F57-9F63-357A5388BC2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFA288EC-BE8A-4226-99FB-7A25F27811AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFA288EC-BE8A-4226-99FB-7A25F27811AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFA288EC-BE8A-4226-99FB-7A25F27811AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFA288EC-BE8A-4226-99FB-7A25F27811AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEC004BE-29F1-4E87-B9FE-5E2E47EE2785}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEC004BE-29F1-4E87-B9FE-5E2E47EE2785}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEC004BE-29F1-4E87-B9FE-5E2E47EE2785}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEC004BE-29F1-4E87-B9FE-5E2E47EE2785}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

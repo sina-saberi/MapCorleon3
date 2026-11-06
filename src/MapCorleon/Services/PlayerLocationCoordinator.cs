@@ -131,6 +131,7 @@ public sealed class PlayerLocationCoordinator : IPlayerLocationCoordinator, IHos
             PlayerLocationReadStatus.Interior => (PlayerTrackingState.PlayerIsInterior, "Player is indoors"),
             PlayerLocationReadStatus.GameNotRunning => (PlayerTrackingState.GameNotRunning, "Game not running"),
             PlayerLocationReadStatus.UnsupportedGameVersion => (PlayerTrackingState.UnsupportedGameVersion, "Unsupported game version"),
+            PlayerLocationReadStatus.OutsideSupportedWorldspace => (PlayerTrackingState.OutsideSupportedWorldspace, "Player is outside the selected map"),
             _ => (PlayerTrackingState.UnableToReadLocation, "Unable to read location")
         };
         if (State != newState && newState is PlayerTrackingState.UnsupportedGameVersion or PlayerTrackingState.UnableToReadLocation)

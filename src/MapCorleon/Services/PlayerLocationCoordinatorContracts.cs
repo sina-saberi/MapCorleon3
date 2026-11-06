@@ -12,7 +12,8 @@ public enum PlayerTrackingState
     TrackingPlayer,
     PlayerIsInterior,
     UnableToReadLocation,
-    UnsupportedGameVersion
+    UnsupportedGameVersion,
+    OutsideSupportedWorldspace
 }
 
 public interface IPlayerLocationCoordinator : INotifyPropertyChanged

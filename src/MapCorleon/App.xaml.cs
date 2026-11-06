@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Windows;
 using MapCorleon.Data;
 using MapCorleon.Contracts;
+using MapCorleon.Games.Fallout4;
 using MapCorleon.Games.Skyrim;
 using MapCorleon.MapGenie;
 using MapCorleon.Services;
@@ -38,6 +39,7 @@ public partial class App : Application
         services.AddSingleton<IProcessMemoryReader, WindowsProcessMemoryReader>();
         services.AddSingleton<IProcessStarter, SystemProcessStarter>();
         services.AddSkyrimGame();
+        services.AddFallout4Game();
         services.AddSingleton<PlayerLocationCoordinator>();
         services.AddSingleton<IPlayerLocationCoordinator>(provider => provider.GetRequiredService<PlayerLocationCoordinator>());
         services.AddHostedService(provider => provider.GetRequiredService<PlayerLocationCoordinator>());

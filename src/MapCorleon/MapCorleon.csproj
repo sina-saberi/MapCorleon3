@@ -11,6 +11,7 @@
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
     <ProjectReference Include="..\MapCorleon.Contracts\MapCorleon.Contracts.csproj" />
     <ProjectReference Include="..\MapCorleon.Games.Skyrim\MapCorleon.Games.Skyrim.csproj" />
+    <ProjectReference Include="..\MapCorleon.Games.Fallout4\MapCorleon.Games.Fallout4.csproj" />
     <ProjectReference Include="..\MapCorleon.MapGenie\MapCorleon.MapGenie.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.17" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
