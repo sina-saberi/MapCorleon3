@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.IO;
+using System.Security.Principal;
 using System.Net.Http;
 using System.Net;
 using System.Net.Http.Headers;
@@ -19,8 +21,12 @@ namespace MapCorleon;
 
 public partial class App : Application
 {
-    public static IServiceProvider Services => ((App)Current)._host.Services;
-    private readonly IHost _host = Host.CreateDefaultBuilder().ConfigureServices(services =>
+    public static IServiceProvider Services => ((App)Current).host.Value.Services;
+
+    private InstanceActivation? instance;
+    private readonly Lazy<IHost> host = new(CreateHost);
+
+    private static IHost CreateHost() => Host.CreateDefaultBuilder().ConfigureServices(services =>
     {
         services.AddSingleton<ISettingsService, JsonSettingsService>();
         services.AddDbContextFactory<AppDbContext>((provider, options) =>
@@ -74,22 +80,47 @@ public partial class App : Application
     }
     protected override async void OnStartup(StartupEventArgs e)
     {
+        using var process = Process.GetCurrentProcess();
+        using var user = WindowsIdentity.GetCurrent();
+        instance = new InstanceActivation($"MapCorleon-{process.SessionId}-{user.User}");
+        if (!instance.IsPrimary)
+        {
+            await instance.RequestActivationAsync();
+            Shutdown();
+            return;
+        }
+
+        _ = instance.ListenAsync(() => Dispatcher.BeginInvoke(() =>
+        {
+            if (MainWindow is not null)
+                host.Value.Services.GetRequiredService<ITrayService>().ShowWindow();
+        }));
+
         DarkWindowChrome.Register();
-        await _host.StartAsync();
-        await using var scope = _host.Services.CreateAsyncScope();
+        await host.Value.StartAsync();
+        await using var scope = host.Value.Services.CreateAsyncScope();
         var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
         await using var db = await factory.CreateDbContextAsync();
         await DbSchemaInitializer.InitializeAsync(db);
         await DbSeeder.SeedAsync(db);
-        await _host.Services.GetRequiredService<IImportTaskService>().InitializeAsync();
-        _host.Services.GetRequiredService<MainWindow>().Show(); base.OnStartup(e);
+        await host.Value.Services.GetRequiredService<IImportTaskService>().InitializeAsync();
+        host.Value.Services.GetRequiredService<MainWindow>().Show(); base.OnStartup(e);
     }
     protected override async void OnExit(ExitEventArgs e)
     {
-        if (_host.Services.GetService<ITrayService>() is IDisposable tray)
-            tray.Dispose();
-        await _host.StopAsync();
-        _host.Dispose();
-        base.OnExit(e);
+        try
+        {
+            if (host.IsValueCreated)
+            {
+                host.Value.Services.GetService<ITrayService>()?.Dispose();
+                await host.Value.StopAsync();
+                host.Value.Dispose();
+            }
+        }
+        finally
+        {
+            instance?.Dispose();
+            base.OnExit(e);
+        }
     }
 }
