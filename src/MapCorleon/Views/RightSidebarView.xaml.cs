@@ -128,7 +128,7 @@ public partial class RightSidebarView : UserControl
     }
     private void Edit_Click(object sender, RoutedEventArgs e)
     {
-        if ((DataContext as ShellViewModel)?.SelectedLocation is not { } location) return;
+        if ((DataContext as ShellViewModel)?.SelectedLocation is not { IsCustom: true } location) return;
         new LocationEditorDialog(location) { Owner = Window.GetWindow(this), DataContext = DataContext }.Show();
     }
     private void Move_Click(object sender, RoutedEventArgs e) => (DataContext as ShellViewModel)?.FocusSelectedLocation();

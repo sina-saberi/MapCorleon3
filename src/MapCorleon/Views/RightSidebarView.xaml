@@ -31,16 +31,42 @@
         <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Visible"/>
           <Style.Triggers><DataTrigger Binding="{Binding}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
         </Style></Grid.Style>
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#172131" BorderBrush="#303C4E" BorderThickness="0,0,0,1" Padding="16,11">
+        <Border Grid.Row="0" Background="#172131" BorderBrush="#303C4E" BorderThickness="0,0,0,1" Padding="12,5">
           <DockPanel>
-            <Button DockPanel.Dock="Right" Content="×" Width="32" Height="32" Margin="8,0,0,0" Padding="0"
-                    Background="Transparent" BorderThickness="0" FontSize="20" Foreground="#AFC0D4"
-                    ToolTip="Close location details" Click="Close_Click"/>
-            <StackPanel VerticalAlignment="Center">
-              <TextBlock Text="LOCATION DETAILS" Foreground="#7F91A8" FontSize="10" FontWeight="SemiBold"/>
-              <TextBlock Text="{Binding Title}" Foreground="#CFD9E7" FontSize="12" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
+            <Button DockPanel.Dock="Right" Style="{StaticResource IconAction}" ToolTip="Close location details"
+                    AutomationProperties.Name="Close location details" Click="Close_Click">
+              <Path Style="{StaticResource OutlineActionIcon}" Data="M6,6 L18,18 M18,6 L6,18"/>
+            </Button>
+            <StackPanel Orientation="Horizontal">
+              <Button Style="{StaticResource IconAction}" Margin="0,0,4,0"
+                      ToolTip="{Binding DataContext.MarkActionText,RelativeSource={RelativeSource AncestorType=UserControl}}"
+                      AutomationProperties.Name="{Binding DataContext.MarkActionText,RelativeSource={RelativeSource AncestorType=UserControl}}"
+                      Command="{Binding DataContext.ToggleMarkCommand,RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <Path>
+                  <Path.Style>
+                    <Style TargetType="Path" BasedOn="{StaticResource OutlineActionIcon}">
+                      <Setter Property="Data" Value="M6,3 H18 V21 L12,17 6,21 Z"/>
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding DataContext.MarkActionText,RelativeSource={RelativeSource AncestorType=UserControl}}" Value="Unmark">
+                          <Setter Property="Stroke" Value="#76D6A4"/>
+                          <Setter Property="Data" Value="M6,3 H18 V21 L12,17 6,21 Z M9,10 L11,12 15,8"/>
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </Path.Style>
+                </Path>
+              </Button>
+              <Button Style="{StaticResource IconAction}" Margin="0,0,4,0" ToolTip="Center on map"
+                      AutomationProperties.Name="Center on map" Click="Move_Click">
+                <Path Style="{StaticResource OutlineActionIcon}" Data="M4,9 V4 H9 M15,4 H20 V9 M20,15 V20 H15 M9,20 H4 V15 M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12"/>
+              </Button>
+              <Button Style="{StaticResource IconAction}" ToolTip="Edit custom location"
+                      AutomationProperties.Name="Edit custom location" Click="Edit_Click"
+                      Visibility="{Binding IsCustom,Converter={StaticResource BoolToVisibility}}">
+                <Path Style="{StaticResource OutlineActionIcon}" Data="M4,17 L15.5,5.5 A2.1,2.1 0 0 1 18.5,5.5 L19.5,6.5 A2.1,2.1 0 0 1 19.5,9.5 L8,21 H4 Z M14,7 L18,11"/>
+              </Button>
             </StackPanel>
           </DockPanel>
         </Border>
@@ -98,19 +124,6 @@
             </Border>
           </StackPanel>
         </ScrollViewer>
-
-        <Border Grid.Row="2" Background="#151B25" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="13,10">
-          <StackPanel>
-            <Button Content="◎  Center on map" Click="Move_Click" Background="#315B9C" Padding="12,10" Margin="3,3,3,7"/>
-            <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-              <Button Content="{Binding DataContext.MarkActionText,RelativeSource={RelativeSource AncestorType=UserControl}}"
-                      Command="{Binding DataContext.ToggleMarkCommand,RelativeSource={RelativeSource AncestorType=UserControl}}"
-                      HorizontalAlignment="Stretch"/>
-              <Button Grid.Column="1" Content="✎  Edit" Click="Edit_Click" MinWidth="82"
-                      Visibility="{Binding IsCustom,Converter={StaticResource BoolToVisibility}}"/>
-            </Grid>
-          </StackPanel>
-        </Border>
       </Grid>
     </Grid>
   </Border>
