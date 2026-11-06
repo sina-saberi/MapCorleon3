@@ -92,23 +92,37 @@
                 <RowDefinition/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Padding="16,9" BorderBrush="#2A3749" BorderThickness="0,0,0,1">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#182437" Offset="0"/>
-                        <GradientStop Color="#131C29" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-                <DockPanel>
-                    <Border DockPanel.Dock="Right" Background="#22334B" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding TotalCount,StringFormat={}{0:N0}}" Foreground="#9CC7FF" FontSize="11" FontWeight="SemiBold"/>
-                    </Border>
-                    <TextBlock Text="{Binding CurrentGameName}" FontSize="15" FontWeight="SemiBold" Foreground="White"
-                               Margin="0,0,8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                </DockPanel>
+            <Border Grid.Row="0" Margin="12,10,12,0" Padding="4,3" Background="#192230"
+                    BorderBrush="#2B394D" BorderThickness="1" CornerRadius="6">
+                <UniformGrid Rows="1">
+                    <Button Command="{Binding LaunchGameCommand}" Visibility="{Binding CanLaunchGame,Converter={StaticResource BoolToVisibility}}" Style="{StaticResource IconAction}"
+                            ToolTip="Launch game" AutomationProperties.Name="Launch game">
+                        <Path Style="{StaticResource OutlineActionIcon}" Data="M7,4 L20,12 7,20 Z"/>
+                    </Button>
+                    <Button Click="Timeline_Click" Style="{StaticResource IconAction}"
+                            ToolTip="Maps and timelines" AutomationProperties.Name="Maps and timelines">
+                        <Path Style="{StaticResource OutlineActionIcon}" Data="M3,6 L9,3 15,6 21,3 V18 L15,21 9,18 3,21 Z M9,3 V18 M15,6 V21"/>
+                    </Button>
+                    <Button Click="Downloads_Click" Style="{StaticResource IconAction}"
+                            ToolTip="Downloads" AutomationProperties.Name="Downloads">
+                        <Path Style="{StaticResource OutlineActionIcon}" Data="M12,3 V14 M8,10 L12,14 16,10 M4,15 V20 H20 V15"/>
+                    </Button>
+                    <Button Click="Import_Click" Style="{StaticResource IconAction}"
+                            ToolTip="Import map" AutomationProperties.Name="Import map">
+                        <Path Style="{StaticResource OutlineActionIcon}" Data="M8,4 H19 V20 H8 V16 M8,8 V4 M3,12 H15 M12,9 L15,12 12,15"/>
+                    </Button>
+                    <Button x:Name="CustomButton" Click="Custom_Click" Background="#254977" Foreground="#E0EDFF" Style="{StaticResource IconAction}"
+                            ToolTip="Add pin" AutomationProperties.Name="Add pin">
+                        <Path Style="{StaticResource OutlineActionIcon}" Data="M12,22 C10,19 5,14 5,9 A7,7 0 1 1 19,9 C19,14 14,19 12,22 Z M12,6 V12 M9,9 H15"/>
+                    </Button>
+                    <Button Click="Settings_Click" Style="{StaticResource IconAction}"
+                            ToolTip="Settings" AutomationProperties.Name="Settings">
+                        <Path Style="{StaticResource OutlineActionIcon}" Data="M10,3 H14 L14.6,5.4 16,6.2 18.4,5.5 20.4,9 18.7,10.8 V13.2 L20.4,15 18.4,18.5 16,17.8 14.6,18.6 14,21 H10 L9.4,18.6 8,17.8 5.6,18.5 3.6,15 5.3,13.2 V10.8 L3.6,9 5.6,5.5 8,6.2 9.4,5.4 Z M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12"/>
+                    </Button>
+                </UniformGrid>
             </Border>
 
-            <Grid Grid.Row="1" Margin="12,12,12,8">
+            <Grid Grid.Row="1" Margin="12,8,12,8">
                 <TextBox x:Name="SearchBox" Margin="0" Padding="34,9,36,9" Background="#192230"
                  Text="{Binding Query,UpdateSourceTrigger=PropertyChanged}" ToolTip="Search locations, categories, and groups"/>
                 <TextBlock Text="⌕" FontSize="18" Foreground="#7588A0" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False"/>

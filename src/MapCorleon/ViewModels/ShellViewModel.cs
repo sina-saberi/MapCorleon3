@@ -129,21 +129,16 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(Query);
     public string? CurrentMapName => currentMapName;
-    public string CurrentGameName => CurrentMap?.Game?.Name is { } name && !string.IsNullOrWhiteSpace(name)
-        ? name
-        : CurrentMap?.Name ?? "Choose a map";
     public bool IsAllFilter => MarkFilter == MarkFilter.All;
     public bool IsMarkedFilter => MarkFilter == MarkFilter.Marked;
     public bool IsUnmarkedFilter => MarkFilter == MarkFilter.Unmarked;
     public string MarkActionText => SelectedLocation?.Marks.Count > 0 ? "Unmark" : "Mark";
     public int PickedCount => allLocations.Count(location => location.Marks.Count > 0);
-    public int TotalCount => allLocations.Count;
     public string ProgressText => $"{trackedProgress.Picked} locations picked from {trackedProgress.Total} total";
     public string ProgressSummary => $"{trackedProgress.Picked:N0} of {trackedProgress.Total:N0} marked";
     public int ProgressPercentage => trackedProgress.Total == 0 ? 0 : (int)Math.Round(trackedProgress.Picked * 100d / trackedProgress.Total);
     public IReadOnlySet<int> ExcludedProgressCategoryIds => settingsService.Current.ExcludedProgressCategoryIds;
     public PlayerLocation? LivePlayerLocation => playerLocationCoordinator.CurrentLocation;
-    public PlayerTrackingState TrackingState => playerLocationCoordinator.State;
     public string PlayerTrackingStatusText => playerLocationCoordinator.StatusText;
     public bool IsPlayerTrackingSupported => CurrentMap is not null && playerLocationCoordinator.Supports(CurrentMap);
     public bool CanLaunchGame => CurrentGameLauncher is not null;
@@ -181,7 +176,6 @@ public sealed class ShellViewModel : ViewModelBase
         private set
         {
             if (!Set(ref currentMap, value)) return;
-            OnPropertyChanged(nameof(CurrentGameName));
             OnPropertyChanged(nameof(IsPlayerTrackingSupported));
             OnPropertyChanged(nameof(CanLaunchGame));
             ((RelayCommand)LaunchGameCommand).RaiseCanExecuteChanged();
@@ -391,7 +385,6 @@ public sealed class ShellViewModel : ViewModelBase
         ReplaceCollection(SearchResults, IsSearchActive ? visible : []);
 
         OnPropertyChanged(nameof(PickedCount));
-        OnPropertyChanged(nameof(TotalCount));
     }
 
     private void UpdateTrackedProgress()
@@ -450,8 +443,6 @@ public sealed class ShellViewModel : ViewModelBase
         {
             if (e.PropertyName == nameof(IPlayerLocationCoordinator.CurrentLocation))
                 OnPropertyChanged(nameof(LivePlayerLocation));
-            else if (e.PropertyName == nameof(IPlayerLocationCoordinator.State))
-                OnPropertyChanged(nameof(TrackingState));
             else if (e.PropertyName == nameof(IPlayerLocationCoordinator.StatusText))
                 OnPropertyChanged(nameof(PlayerTrackingStatusText));
         });
