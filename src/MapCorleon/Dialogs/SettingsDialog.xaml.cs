@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using MapCorleon.Contracts;
 using MapCorleon.Data;
+using MapCorleon.Games.Fallout4;
 using MapCorleon.Games.Skyrim;
 using MapCorleon.Models;
 using MapCorleon.Services;
@@ -44,19 +45,22 @@ public partial class SettingsDialog : Window
         }
 
         OverlayMapName.Text = activeMap?.DisplayName ?? "No active map";
-        if (activeMap is null || !SkyrimGameIdentity.IsTrackingMap(GameMapDescriptorFactory.Create(activeMap)))
+        var descriptor = activeMap is null ? null : GameMapDescriptorFactory.Create(activeMap);
+        var fallout = descriptor is not null && Fallout4MapProfile.ForMap(descriptor) is not null;
+        if (activeMap is null || descriptor is null || (!fallout && !SkyrimGameIdentity.IsTrackingMap(descriptor)))
         {
             OverlayOptions.Visibility = Visibility.Collapsed;
-            OverlayUnavailable.Text = activeMap is null
-                ? "Open a supported map to change its game overlay settings."
-                : App.Services.GetRequiredService<IPlayerLocationCoordinator>().Supports(activeMap)
-                    ? "Desktop player tracking is available for this map. The in-game overlay supports Skyrim."
-                    : "The in-game overlay supports the Skyrim and Solstheim maps.";
+            OverlayUnavailable.Text = "Open a supported Skyrim or Fallout 4 map to configure its game overlay.";
             OverlayUnavailable.Visibility = Visibility.Visible;
             return;
         }
 
-        overlaySettingsKey = SkyrimGameIdentity.OverlaySettingsKey;
+        overlaySettingsKey = fallout ? Fallout4MapProfile.OverlaySettingsKey : SkyrimGameIdentity.OverlaySettingsKey;
+        if (fallout)
+        {
+            NearbyRadiusLabel.Text = "Nearby radius (Fallout 4 units)";
+            KeybindingHint.Text = "Choose two different function keys. When unchecked, Fallout 4 uses F7 and F8.";
+        }
         var originalOverlay = settings.Current.GameOverlays.GetValueOrDefault(overlaySettingsKey)
             ?? GameOverlaySettings.Default;
         excludedCategories.UnionWith(originalOverlay.ExcludedCategories ?? []);
@@ -64,8 +68,9 @@ public partial class SettingsDialog : Window
         NotificationSeconds.Text = originalOverlay.NearbyNotificationSeconds.ToString();
         CustomKeys.IsChecked = originalOverlay.PanelScanCode.HasValue && originalOverlay.FollowScanCode.HasValue;
 
-        var keys = Enumerable.Range(1, 10).Select(number => new KeyChoice($"F{number}", 0x3A + number))
-            .Concat([new KeyChoice("F11", 0x57), new KeyChoice("F12", 0x58)]).ToArray();
+        var keys = Enumerable.Range(1, 10).Select(number => new KeyChoice($"F{number}", 0x3A + number)).ToList();
+        keys.Add(new KeyChoice("F11", 0x57));
+        if (!fallout) keys.Add(new KeyChoice("F12", 0x58));
         PanelKey.ItemsSource = keys;
         FollowKey.ItemsSource = keys;
         PanelKey.SelectedValue = originalOverlay.PanelScanCode ?? 0x41;

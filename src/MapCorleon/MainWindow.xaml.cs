@@ -10,6 +10,7 @@ public partial class MainWindow : Window
     readonly ShellViewModel vm;
     readonly ITrayService tray;
     readonly CancellationTokenSource overlayLifetime = new();
+    readonly Fallout4DesktopOverlay falloutOverlay;
     bool exitRequested;
 
     public MainWindow(ShellViewModel vm, ITrayService tray, ISettingsService settings, ILogger<MainWindow> overlayLogger)
@@ -23,6 +24,8 @@ public partial class MainWindow : Window
         Loaded += async (_, _) => await vm.LoadAsync();
         var overlay = new SkyrimOverlayServer(Dispatcher, vm, DesktopMap.TogglePlayerFollow, settings, overlayLogger);
         _ = RunOverlayAsync(overlay);
+        falloutOverlay = new Fallout4DesktopOverlay(vm, DesktopMap.TogglePlayerFollow, settings, overlayLogger);
+        SourceInitialized += (_, _) => falloutOverlay.Start(this);
     }
 
     private async Task RunOverlayAsync(SkyrimOverlayServer overlay)
@@ -33,6 +36,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        falloutOverlay.Dispose();
         overlayLifetime.Cancel();
         base.OnClosed(e);
     }

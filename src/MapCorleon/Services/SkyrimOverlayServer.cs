@@ -18,7 +18,7 @@ internal sealed class SkyrimOverlayServer(
 {
     private const string PipeName = "MapCorleon.SkyrimOverlay.v1";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    private readonly SkyrimNearbyLocations nearby = new();
+    private readonly OverlayNearbyLocations nearby = new();
     private (int MapId, int TimelineId)? currentScope;
     private Guid scopeToken;
 
@@ -109,6 +109,6 @@ internal sealed class SkyrimOverlayServer(
 
     private sealed record OverlayRequest(string Action, Guid Scope = default, int LocationId = 0);
     private sealed record OverlayPreferences(int? PanelScanCode, int? FollowScanCode, int NearbyNotificationSeconds);
-    private sealed record OverlayState(Guid Scope, bool CanFollow, IReadOnlyList<SkyrimNearbyLocations.Card> Cards,
+    private sealed record OverlayState(Guid Scope, bool CanFollow, IReadOnlyList<OverlayNearbyLocations.Card> Cards,
         string? Feedback, OverlayPreferences Preferences);
 }

@@ -17,7 +17,7 @@ internal static class DarkWindowChrome
 
     private static void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        if (sender is not Window window) return;
+        if (sender is not Window window || window.AllowsTransparency) return;
 
         window.Background = new SolidColorBrush(Color.FromRgb(16, 20, 29));
         var handle = new WindowInteropHelper(window).Handle;

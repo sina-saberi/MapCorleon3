@@ -2,11 +2,13 @@ using MapCorleon.Contracts;
 
 namespace MapCorleon.Games.Fallout4;
 
-internal sealed record Fallout4MapProfile(
+public sealed record Fallout4MapProfile(
     uint WorldspaceId,
     double LongitudeFromX, double LongitudeFromY, double LongitudeOffset,
     double LatitudeFromX, double LatitudeFromY, double LatitudeOffset)
 {
+    public const string OverlaySettingsKey = "fallout4";
+
     // MapGenie maps 200, 201, and 202. DLC form IDs include the official master slots.
     public static Fallout4MapProfile? ForMap(GameMapDescriptor map) => Fallout4GameIdentity.IsFallout4(map)
         ? Fallout4GameIdentity.Normalize(map.MapName) switch
@@ -29,6 +31,15 @@ internal sealed record Fallout4MapProfile(
     private static readonly Fallout4MapProfile NukaWorld = new(
         0x0600290F, 5.719391427702448e-06, 8.803035675482019e-09, -0.6623902199160263,
         -3.158899713179619e-08, 5.656844055118405e-06, 0.6576125436704727);
+
+    // Invert the affine transform so the configured radius is in Fallout 4 world units.
+    public double GameDistanceSquared(double longitudeDelta, double latitudeDelta)
+    {
+        var determinant = LongitudeFromX * LatitudeFromY - LongitudeFromY * LatitudeFromX;
+        var x = (LatitudeFromY * longitudeDelta - LongitudeFromY * latitudeDelta) / determinant;
+        var y = (LongitudeFromX * latitudeDelta - LatitudeFromX * longitudeDelta) / determinant;
+        return x * x + y * y;
+    }
 
     public PlayerLocation Project(GamePosition position) => new(
         LatitudeFromX * position.X + LatitudeFromY * position.Y + LatitudeOffset,

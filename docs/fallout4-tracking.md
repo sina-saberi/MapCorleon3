@@ -1,10 +1,16 @@
 # Fallout 4 and Skyrim player tracking
 
-The desktop tracker supports MapGenie Commonwealth, Far Harbor, and Nuka-World on Fallout 4 `1.11.221.0`. It also supports Skyrim and Solstheim on Skyrim SE `1.6.1170`. Select the map that matches the loaded game area. A different worldspace or an interior hides the marker. The Skyrim overlay can use both Skyrim maps. Fallout 4 uses the desktop map controls.
+The desktop tracker supports MapGenie Commonwealth, Far Harbor, and Nuka-World on Fallout 4 `1.11.221.0`. It also supports Skyrim and Solstheim on Skyrim SE `1.6.1170`. Select the map that matches the loaded game area. A different worldspace or an interior hides the marker. The Skyrim overlay can use both Skyrim maps. Fallout 4 has its own Windows overlay for windowed and borderless play.
 
 ## Launch settings
 
 Open **Settings → Game launch** from a supported map, browse to the executable you normally use, then select **Save**. Use the play button in the header to launch the game. MapCorleon uses the selected map's saved executable first. A map with an empty path can use a configured map from the same game. Existing per-map launch settings take precedence.
+
+## Fallout 4 overlay
+
+MapCorleon draws a separate window over Fallout 4. Keep MapCorleon running with the matching Fallout map selected. Passive nearby alerts time out and allow clicks to pass through. Press **F7** to open the clickable panel, then use **Collect** or **×** on a location. Press **F7**, **Esc**, or the panel close button to return focus to the game. Press **F8** to toggle desktop Follow Player and see brief feedback.
+
+Use **Settings → Game overlay** to change the keys, alert duration, nearby radius, and categories. The Fallout settings are shared across the three Fallout maps. The overlay uses Windows window positioning and hotkeys. [Window styles](https://learn.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles) · [Hotkeys](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey)
 
 ## Memory profiles and alignment
 

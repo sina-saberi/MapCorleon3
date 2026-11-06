@@ -12,7 +12,7 @@ public sealed class SkyrimOverlayTests
     [Fact]
     public void NearbyCardsAreLimitedAndDismissedUntilThePlayerLeaves()
     {
-        var nearby = new SkyrimNearbyLocations();
+        var nearby = new OverlayNearbyLocations();
         var player = new PlayerLocation(0, 0, 0, 0, 0);
         Location[] locations =
         [
@@ -37,7 +37,7 @@ public sealed class SkyrimOverlayTests
     [Fact]
     public void NearbyCardsRespectTheGameRadiusAndCategoryPreferences()
     {
-        var nearby = new SkyrimNearbyLocations();
+        var nearby = new OverlayNearbyLocations();
         var player = new PlayerLocation(0, 0, 0, 0, 0);
         Location[] locations =
         [

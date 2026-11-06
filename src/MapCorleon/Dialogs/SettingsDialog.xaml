@@ -104,7 +104,7 @@
           <StackPanel x:Name="OverlayOptions">
             <UniformGrid Columns="2">
               <StackPanel Margin="0,0,8,0">
-                <TextBlock Text="Nearby radius (Skyrim units)"/>
+                <TextBlock x:Name="NearbyRadiusLabel" Text="Nearby radius (Skyrim units)"/>
                 <TextBox x:Name="NearbyRadius" Margin="0,4,0,0"/>
               </StackPanel>
               <StackPanel Margin="8,0,0,0">
@@ -123,7 +123,7 @@
                 <ComboBox x:Name="FollowKey" DisplayMemberPath="Name" SelectedValuePath="ScanCode" Margin="0,4,0,0"/>
               </StackPanel>
             </UniformGrid>
-            <TextBlock Text="Choose two different function keys. When unchecked, the plugin uses its INI bindings."
+            <TextBlock x:Name="KeybindingHint" Text="Choose two different function keys. When unchecked, the plugin uses its INI bindings."
                        Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,5,0,12"/>
             <TextBlock Text="Categories shown in alerts and the nearby panel"/>
             <TextBlock x:Name="CategoryStatus" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
