@@ -121,7 +121,7 @@
       </ControlTemplate></Setter.Value></Setter>
     </Style>
     <ControlTemplate x:Key="VerticalScrollBarTemplate" TargetType="ScrollBar">
-      <Grid Width="12" Background="Transparent">
+      <Grid Background="Transparent">
         <Track x:Name="PART_Track" Orientation="Vertical" IsDirectionReversed="True">
           <Track.DecreaseRepeatButton><RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Focusable="False" Opacity="0"/></Track.DecreaseRepeatButton>
           <Track.Thumb><Thumb Style="{StaticResource VerticalScrollThumb}"/></Track.Thumb>

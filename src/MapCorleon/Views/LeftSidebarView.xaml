@@ -28,8 +28,7 @@
             </Setter>
         </Style>
         <Style x:Key="GroupExpander" TargetType="Expander">
-            <Setter Property="Margin" Value="0,0,0,6"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Expander">
@@ -38,100 +37,44 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <ToggleButton x:Name="HeaderToggle" IsChecked="{Binding IsExpanded,RelativeSource={RelativeSource TemplatedParent}}"
-                      Background="Transparent" BorderThickness="0" Padding="10,9" HorizontalContentAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <ToggleButton x:Name="GroupChevron" Height="28" Cursor="Hand"
+                                          IsChecked="{Binding IsExpanded,RelativeSource={RelativeSource TemplatedParent},Mode=TwoWay}"
+                                          ToolTip="Expand or collapse group" AutomationProperties.Name="Expand or collapse group">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
-                                        <Border x:Name="HeaderChrome" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
-                                            <Grid >
-                                                <Grid.ColumnDefinitions >
-                                                    <ColumnDefinition Width="22"/>
-                                                    <ColumnDefinition/>
-                                                </Grid.ColumnDefinitions>
-                                                <Path x:Name="Chevron" Data="M 0,0 L 4,4 L 0,8" Stroke="#8192A8" StrokeThickness="1.4"
-                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                                      Width="5" Height="9" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                      RenderTransformOrigin="0.5,0.5" Margin="4,0,0,0">
-                                                    <Path.RenderTransform>
-                                                        <RotateTransform x:Name="ChevronRotation" Angle="0"/>
-                                                    </Path.RenderTransform>
-                                                </Path>
-                                                <ContentPresenter Grid.Column="1" ContentSource="Content" VerticalAlignment="Center"/>
-                                            </Grid>
+                                        <Border x:Name="HitArea" Background="Transparent" CornerRadius="4">
+                                            <Path x:Name="Chevron" Data="M3,2 L7,6 L3,10" Width="10" Height="12"
+                                                  Stroke="#9CAFC7" StrokeThickness="1.5" StrokeLineJoin="Round"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  RenderTransformOrigin="0.5,0.5"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="HeaderChrome" Property="Background" Value="#202B3B"/>
-                                            </Trigger>
                                             <Trigger Property="IsChecked" Value="True">
-                                                <Trigger.EnterActions>
-                                                    <BeginStoryboard>
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetName="ChevronRotation" Storyboard.TargetProperty="Angle"
-                                                                             To="90" Duration="0:0:0.18">
-                                                                <DoubleAnimation.EasingFunction>
-                                                                    <CubicEase EasingMode="EaseOut"/>
-                                                                </DoubleAnimation.EasingFunction>
-                                                            </DoubleAnimation>
-                                                        </Storyboard>
-                                                    </BeginStoryboard>
-                                                </Trigger.EnterActions>
-                                                <Trigger.ExitActions>
-                                                    <BeginStoryboard>
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetName="ChevronRotation" Storyboard.TargetProperty="Angle"
-                                                                             To="0" Duration="0:0:0.18">
-                                                                <DoubleAnimation.EasingFunction>
-                                                                    <CubicEase EasingMode="EaseOut"/>
-                                                                </DoubleAnimation.EasingFunction>
-                                                            </DoubleAnimation>
-                                                        </Storyboard>
-                                                    </BeginStoryboard>
-                                                </Trigger.ExitActions>
+                                                <Setter TargetName="Chevron" Property="RenderTransform">
+                                                    <Setter.Value><RotateTransform Angle="90"/></Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="HitArea" Property="Background" Value="#263347"/>
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter TargetName="HitArea" Property="Background" Value="#263347"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </ToggleButton.Template>
-                                <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"/>
                             </ToggleButton>
-                            <Border x:Name="ContentSite" Grid.Row="1" Padding="6,0,6,7" Opacity="0" IsHitTestVisible="False">
-                                <Border.LayoutTransform>
-                                    <ScaleTransform x:Name="ContentScale" ScaleY="0.001"/>
-                                </Border.LayoutTransform>
-                                <ContentPresenter ContentSource="Content"/>
-                            </Border>
+                            <ContentPresenter Grid.Column="1" ContentSource="Header"/>
+                            <ContentPresenter x:Name="GroupContent" Grid.Row="1" Grid.ColumnSpan="2"
+                                              ContentSource="Content" Margin="0,2,0,4" Visibility="Collapsed"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
-                                <Setter TargetName="ContentSite" Property="IsHitTestVisible" Value="True"/>
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ContentScale" Storyboard.TargetProperty="ScaleY"
-                                                             To="1" Duration="0:0:0.2">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <CubicEase EasingMode="EaseOut"/>
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                            <DoubleAnimation Storyboard.TargetName="ContentSite" Storyboard.TargetProperty="Opacity"
-                                                             To="1" Duration="0:0:0.14"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ContentScale" Storyboard.TargetProperty="ScaleY"
-                                                             To="0.001" Duration="0:0:0.18">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <CubicEase EasingMode="EaseIn"/>
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                            <DoubleAnimation Storyboard.TargetName="ContentSite" Storyboard.TargetProperty="Opacity"
-                                                             To="0" Duration="0:0:0.12"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
+                                <Setter TargetName="GroupContent" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -222,42 +165,46 @@
                 </Button>
             </StackPanel>
 
-            <Border Grid.Row="3" Margin="12,0,12,12" Padding="5" Background="#171F2B" BorderBrush="#2A374A" BorderThickness="1" CornerRadius="6">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                    <StackPanel>
+            <Border Grid.Row="3" Margin="12,0,12,12" Background="#171F2B" BorderBrush="#2A374A" BorderThickness="1" CornerRadius="6">
+                <ScrollViewer Margin="4,3,0,3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer.Resources>
+                        <Style TargetType="ScrollBar" BasedOn="{StaticResource {x:Type ScrollBar}}">
+                            <Setter Property="MinWidth" Value="0"/>
+                            <Setter Property="Width" Value="8"/>
+                        </Style>
+                    </ScrollViewer.Resources>
+                    <StackPanel Margin="0,0,3,0">
                         <ItemsControl ItemsSource="{Binding CategoryGroups}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Expander Style="{StaticResource GroupExpander}" IsExpanded="True">
                                         <Expander.Header>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#D8E2EF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding Categories.Count}" Foreground="#6F829A" Margin="8,0" VerticalAlignment="Center"/>
-                                                <Button Grid.Column="2" Content="Toggle all" Padding="7,3" Margin="0" FontSize="10" ToolTip="Show or hide all categories in this group"
-                                Command="{Binding DataContext.ToggleGroupCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Group}"/>
-                                            </Grid>
+                                            <Button Padding="4,0" Margin="0" Background="Transparent" BorderThickness="0"
+                                                    FontWeight="SemiBold" Foreground="#D8E2EF" HorizontalContentAlignment="Left"
+                                                    ToolTip="Show or hide all categories in this group"
+                                                    AutomationProperties.Name="{Binding Name,StringFormat=Toggle categories in {0}}"
+                                                    Command="{Binding DataContext.ToggleGroupCommand,RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding Group}">
+                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                            </Button>
                                         </Expander.Header>
                                         <ItemsControl ItemsSource="{Binding Categories}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border Background="#141C27" CornerRadius="4" Margin="0,2" Padding="8,6">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition/>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible,Mode=TwoWay}"
-                                      Command="{Binding DataContext.ToggleCategoryCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-                                                            <Border Grid.Column="1" Background="#202D40" CornerRadius="8" Padding="7,2" Margin="8,0,0,0">
-                                                                <TextBlock Text="{Binding ProgressText}" Foreground="#8EA6C2" FontSize="10" ToolTip="Marked / total locations"/>
-                                                            </Border>
-                                                        </Grid>
-                                                    </Border>
+                                                    <Grid Margin="9,0,4,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <CheckBox Padding="0,5" IsChecked="{Binding IsVisible,Mode=TwoWay}"
+                                                                  Command="{Binding DataContext.ToggleCategoryCommand,RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                  CommandParameter="{Binding}">
+                                                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                                        </CheckBox>
+                                                        <TextBlock Grid.Column="1" Margin="6,0,0,0" Text="{Binding ProgressText}"
+                                                                   Foreground="#8EA6C2" FontSize="11" VerticalAlignment="Center"
+                                                                   ToolTip="Marked / total locations"/>
+                                                    </Grid>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>

@@ -6,13 +6,23 @@ namespace MapCorleon.Models;
 
 public sealed class Category : IEntity, INotifyPropertyChanged
 {
+    private bool isVisible = true;
     private int totalLocationCount;
     private int pickedLocationCount;
     public int Id { get; set; }
     public int GroupId { get; set; }
     public long? ExternalId { get; set; }
     public required string Name { get; set; }
-    public bool IsVisible { get; set; } = true;
+    public bool IsVisible
+    {
+        get => isVisible;
+        set
+        {
+            if (isVisible == value) return;
+            isVisible = value;
+            OnPropertyChanged();
+        }
+    }
     public string? IconKey { get; set; }
     public int? IconX { get; set; }
     public int? IconY { get; set; }
