@@ -78,6 +78,7 @@ public partial class MapView
         viewModel = DataContext as ShellViewModel;
         if (viewModel is null) return;
         viewModel.PropertyChanged += ViewModelChanged;
+        viewModel.LocationFocusRequested += FocusLocation;
         viewModel.VisibleLocations.CollectionChanged += LocationsChanged;
         RebuildMap();
     }
@@ -89,6 +90,7 @@ public partial class MapView
         if (viewModel is not null)
         {
             viewModel.PropertyChanged -= ViewModelChanged;
+            viewModel.LocationFocusRequested -= FocusLocation;
             viewModel.VisibleLocations.CollectionChanged -= LocationsChanged;
         }
         viewModel = null;
@@ -109,6 +111,16 @@ public partial class MapView
             var point = SphericalMercator.FromLonLat(location.Longitude, location.Latitude);
             MapControl.Map?.Navigator.CenterOn(new MPoint(point.x, point.y), 350);
         }
+    }
+
+    private void FocusLocation(Location location)
+    {
+        if (MapControl.Map?.Navigator is not { OverrideZoomBounds: { } bounds } navigator) return;
+
+        PauseFollowingForUserNavigation();
+        var point = SphericalMercator.FromLonLat(location.Longitude, location.Latitude);
+        var resolution = Math.Clamp(navigator.Viewport.Resolution * .75, bounds.Min, bounds.Max);
+        navigator.CenterOnAndZoomTo(new MPoint(point.x, point.y), resolution, 350);
     }
 
     private void LocationsChanged(object? sender, NotifyCollectionChangedEventArgs e)

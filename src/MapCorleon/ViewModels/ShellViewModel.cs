@@ -73,7 +73,12 @@ public sealed class ShellViewModel : ViewModelBase
         ShowAllCommand = new RelayCommand(_ => MarkFilter = MarkFilter.All);
         ShowMarkedCommand = new RelayCommand(_ => MarkFilter = MarkFilter.Marked);
         ShowUnmarkedCommand = new RelayCommand(_ => MarkFilter = MarkFilter.Unmarked);
-        SelectCommand = new RelayCommand(location => SelectedLocation = location as Location);
+        SelectCommand = new RelayCommand(value =>
+        {
+            if (value is not Location location) return;
+            SelectedLocation = location;
+            FocusSelectedLocation();
+        });
         ToggleMarkCommand = new AsyncCommand(ToggleMarkAsync, () => SelectedLocation is not null);
         ReloadCommand = new AsyncCommand(() => LoadAsync(currentMapName));
         LaunchGameCommand = new RelayCommand(_ => LaunchGame(), _ => CanLaunchGame);
@@ -313,9 +318,11 @@ public sealed class ShellViewModel : ViewModelBase
         UpdateTrackedProgress();
     }
 
+    internal event Action<Location>? LocationFocusRequested;
+
     public void FocusSelectedLocation()
     {
-        if (SelectedLocation is not null) OnPropertyChanged(nameof(SelectedLocation));
+        if (SelectedLocation is { } location) LocationFocusRequested?.Invoke(location);
     }
 
     private async Task LoadGroupsAsync(int mapId)
