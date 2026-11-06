@@ -11,13 +11,15 @@ internal sealed class OverlayNearbyLocations
     private readonly HashSet<int> dismissed = [];
 
     public IReadOnlyList<Card> Find(PlayerLocation? player, IReadOnlyList<Location> locations,
-        GameOverlaySettings? preferences = null, Func<double, double, double>? gameDistanceSquared = null, int limit = 3)
+        GameOverlaySettings? preferences = null, Func<double, double, double>? gameDistanceSquared = null,
+        int limit = 3, int? gameRadius = null)
     {
         if (player is null) return [];
         preferences ??= GameOverlaySettings.Default;
         var radiusScale = (double)Math.Clamp(preferences.NearbyRadius, GameOverlaySettings.MinRadius,
             GameOverlaySettings.MaxRadius) / GameOverlaySettings.DefaultRadius;
-        var enterRadius = (gameDistanceSquared is null ? EnterRadius : GameOverlaySettings.DefaultRadius) * radiusScale;
+        var enterRadius = gameDistanceSquared is null ? EnterRadius * radiusScale :
+            gameRadius ?? GameOverlaySettings.DefaultRadius * radiusScale;
         var exitRadius = enterRadius * (ExitRadius / EnterRadius);
         var excludedCategories = preferences.ExcludedCategories ?? [];
         var candidates = new List<(Location Location, double DistanceSquared)>();

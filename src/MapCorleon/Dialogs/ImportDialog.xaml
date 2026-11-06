@@ -4,14 +4,18 @@
         Title="Import map" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner">
   <StackPanel Margin="20" Width="580">
     <TextBlock Text="Import method"/>
-    <ComboBox x:Name="ProviderBox" DisplayMemberPath="DisplayName" Margin="0,4,0,12"/>
-    <TextBlock Text="Map webpage URL"/>
-    <TextBox x:Name="PageUrl" Margin="0,4,0,12"/>
-    <TextBlock Text="Examples: https://fallout4map.com/far-harbor or https://mapgenie.io/witcher-3/maps/white-orchard"
+    <ComboBox x:Name="ProviderBox" DisplayMemberPath="DisplayName" Margin="0,4,0,12" SelectionChanged="ProviderChanged"/>
+    <TextBlock x:Name="SourceLabel" Text="Map webpage URL"/>
+    <DockPanel Margin="0,4,0,12">
+      <Button x:Name="BrowseArchive" DockPanel.Dock="Right" Content="Browse…" Margin="8,0,0,0"
+              Visibility="Collapsed" Click="BrowseArchive_Click"/>
+      <TextBox x:Name="PageUrl" Margin="0"/>
+    </DockPanel>
+    <TextBlock x:Name="SourceHint" Text="Examples: https://fallout4map.com/far-harbor or https://mapgenie.io/witcher-3/maps/white-orchard"
                Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="2,0,2,12"/>
     <CheckBox x:Name="DownloadMedia" Content="Download all media after importing" Margin="2,4"/>
     <CheckBox x:Name="DownloadTiles" Content="Download all map tiles after importing" Margin="2,4"/>
-    <TextBlock Text="Media and tiles are added as separate queue items. The map remains usable and unselected content downloads normally on demand."
+    <TextBlock x:Name="DownloadHint" Text="Media and tiles are added as separate queue items. The map remains usable and unselected content downloads normally on demand."
                Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="2,8"/>
     <TextBlock x:Name="StatusText" TextWrapping="Wrap" Margin="3,10"/>
     <ProgressBar x:Name="ProgressBar" Minimum="0" Maximum="100" Height="7" Visibility="Collapsed"/>

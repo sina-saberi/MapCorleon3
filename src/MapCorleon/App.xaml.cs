@@ -6,6 +6,7 @@ using System.Windows;
 using MapCorleon.Data;
 using MapCorleon.Contracts;
 using MapCorleon.Games.Fallout4;
+using MapCorleon.Games.Kcd2;
 using MapCorleon.Games.Skyrim;
 using MapCorleon.MapGenie;
 using MapCorleon.Services;
@@ -40,6 +41,7 @@ public partial class App : Application
         services.AddSingleton<IProcessStarter, SystemProcessStarter>();
         services.AddSkyrimGame();
         services.AddFallout4Game();
+        services.AddKcd2Game();
         services.AddSingleton<PlayerLocationCoordinator>();
         services.AddSingleton<IPlayerLocationCoordinator>(provider => provider.GetRequiredService<PlayerLocationCoordinator>());
         services.AddHostedService(provider => provider.GetRequiredService<PlayerLocationCoordinator>());
@@ -47,6 +49,7 @@ public partial class App : Application
         services.AddSingleton<IMediaDownloadService, MediaDownloadService>();
         services.AddSingleton<IMapImportSink, EfMapImportSink>();
         services.AddSingleton<IMapProvider, MapGenieProvider>();
+        services.AddSingleton<IMapProvider, Kcd2MonasteryMapProvider>();
         services.AddSingleton<IMapProviderResolver, MapProviderResolver>();
         services.AddSingleton<IImportTaskService, ImportTaskService>();
         services.AddSingleton<ITrayService, TrayService>();

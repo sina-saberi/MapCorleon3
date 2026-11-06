@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace MapCorleon.Services;
 
-internal static class Fallout4OverlayNative
+internal static class DesktopGameOverlayNative
 {
     public const int HotkeyMessage = 0x0312;
     public const uint NoRepeat = 0x4000;

@@ -5,10 +5,10 @@ using MapCorleon.Services;
 
 namespace MapCorleon.Views;
 
-internal partial class Fallout4OverlayWindow : Window
+internal partial class DesktopGameOverlayWindow : Window
 {
     public static readonly DependencyProperty IsInteractiveProperty = DependencyProperty.Register(
-        nameof(IsInteractive), typeof(bool), typeof(Fallout4OverlayWindow));
+        nameof(IsInteractive), typeof(bool), typeof(DesktopGameOverlayWindow));
 
     public bool IsInteractive => (bool)GetValue(IsInteractiveProperty);
 
@@ -16,7 +16,7 @@ internal partial class Fallout4OverlayWindow : Window
     public event Action<int>? CollectRequested;
     public event Action<int>? DismissRequested;
 
-    public Fallout4OverlayWindow() => InitializeComponent();
+    public DesktopGameOverlayWindow() => InitializeComponent();
 
     public void Render(bool interactive, string? message, IReadOnlyList<OverlayNearbyLocations.Card> cards)
     {

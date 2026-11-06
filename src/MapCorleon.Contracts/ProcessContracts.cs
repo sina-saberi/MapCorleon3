@@ -10,6 +10,7 @@ public interface IGameProcessDetector
 {
     GameProcessInfo? Find(string processName);
     bool IsRunning(string processName);
+    nint FindModuleBaseAddress(int processId, string moduleName) => 0;
 }
 
 public interface IProcessMemorySession : IDisposable

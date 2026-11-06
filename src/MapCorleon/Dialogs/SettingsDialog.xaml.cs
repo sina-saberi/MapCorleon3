@@ -3,7 +3,6 @@ using System.IO;
 using System.Windows;
 using MapCorleon.Contracts;
 using MapCorleon.Data;
-using MapCorleon.Games.Fallout4;
 using MapCorleon.Games.Skyrim;
 using MapCorleon.Models;
 using MapCorleon.Services;
@@ -20,6 +19,7 @@ public partial class SettingsDialog : Window
     private readonly Map? launchMap;
     private GameLaunchSettings? savedLaunchSettings;
     private readonly string? overlaySettingsKey;
+    private readonly DesktopOverlayProfile? desktopOverlay;
     private readonly HashSet<string> excludedCategories = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyList<CategoryChoice> categories = [];
     private bool isSaving;
@@ -46,23 +46,23 @@ public partial class SettingsDialog : Window
 
         OverlayMapName.Text = activeMap?.DisplayName ?? "No active map";
         var descriptor = activeMap is null ? null : GameMapDescriptorFactory.Create(activeMap);
-        var fallout = descriptor is not null && Fallout4MapProfile.ForMap(descriptor) is not null;
-        if (activeMap is null || descriptor is null || (!fallout && !SkyrimGameIdentity.IsTrackingMap(descriptor)))
+        desktopOverlay = descriptor is null ? null : DesktopOverlayProfile.ForMap(descriptor)?.Game;
+        if (activeMap is null || descriptor is null || (desktopOverlay is null && !SkyrimGameIdentity.IsTrackingMap(descriptor)))
         {
             OverlayOptions.Visibility = Visibility.Collapsed;
-            OverlayUnavailable.Text = "Open a supported Skyrim or Fallout 4 map to configure its game overlay.";
+            OverlayUnavailable.Text = "Open a supported Skyrim, Fallout 4, or KCD2 map to configure its game overlay.";
             OverlayUnavailable.Visibility = Visibility.Visible;
             return;
         }
 
-        overlaySettingsKey = fallout ? Fallout4MapProfile.OverlaySettingsKey : SkyrimGameIdentity.OverlaySettingsKey;
-        if (fallout)
+        overlaySettingsKey = desktopOverlay?.Key ?? SkyrimGameIdentity.OverlaySettingsKey;
+        if (desktopOverlay is not null)
         {
-            NearbyRadiusLabel.Text = "Nearby radius (Fallout 4 units)";
-            KeybindingHint.Text = "Choose two different function keys. When unchecked, Fallout 4 uses F7 and F8.";
+            NearbyRadiusLabel.Text = $"Nearby radius ({desktopOverlay.RadiusUnits})";
+            KeybindingHint.Text = $"Choose two different function keys. When unchecked, {desktopOverlay.Name} uses F7 and F8.";
         }
-        var originalOverlay = settings.Current.GameOverlays.GetValueOrDefault(overlaySettingsKey)
-            ?? GameOverlaySettings.Default;
+        var originalOverlay = desktopOverlay?.GetSettings(settings) ??
+            settings.Current.GameOverlays.GetValueOrDefault(overlaySettingsKey) ?? GameOverlaySettings.Default;
         excludedCategories.UnionWith(originalOverlay.ExcludedCategories ?? []);
         NearbyRadius.Text = originalOverlay.NearbyRadius.ToString();
         NotificationSeconds.Text = originalOverlay.NearbyNotificationSeconds.ToString();
@@ -70,7 +70,7 @@ public partial class SettingsDialog : Window
 
         var keys = Enumerable.Range(1, 10).Select(number => new KeyChoice($"F{number}", 0x3A + number)).ToList();
         keys.Add(new KeyChoice("F11", 0x57));
-        if (!fallout) keys.Add(new KeyChoice("F12", 0x58));
+        if (desktopOverlay is null) keys.Add(new KeyChoice("F12", 0x58));
         PanelKey.ItemsSource = keys;
         FollowKey.ItemsSource = keys;
         PanelKey.SelectedValue = originalOverlay.PanelScanCode ?? 0x41;
@@ -218,9 +218,11 @@ public partial class SettingsDialog : Window
     private bool TryReadOverlaySettings(out GameOverlaySettings? overlay)
     {
         overlay = null;
-        if (!int.TryParse(NearbyRadius.Text, out var radius) || radius is < GameOverlaySettings.MinRadius or > GameOverlaySettings.MaxRadius)
+        var minRadius = desktopOverlay?.MinRadius ?? GameOverlaySettings.MinRadius;
+        var maxRadius = desktopOverlay?.MaxRadius ?? GameOverlaySettings.MaxRadius;
+        if (!int.TryParse(NearbyRadius.Text, out var radius) || radius < minRadius || radius > maxRadius)
         {
-            MessageBox.Show(this, $"Enter a nearby radius from {GameOverlaySettings.MinRadius} to {GameOverlaySettings.MaxRadius}.", "Settings");
+            MessageBox.Show(this, $"Enter a nearby radius from {minRadius} to {maxRadius}.", "Settings");
             return false;
         }
         if (!int.TryParse(NotificationSeconds.Text, out var seconds) ||

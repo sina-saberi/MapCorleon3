@@ -2,16 +2,15 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
-using MapCorleon.Games.Fallout4;
 using MapCorleon.Models;
 using MapCorleon.ViewModels;
 using MapCorleon.Views;
 using Microsoft.Extensions.Logging;
-using static MapCorleon.Services.Fallout4OverlayNative;
+using static MapCorleon.Services.DesktopGameOverlayNative;
 
 namespace MapCorleon.Services;
 
-internal sealed class Fallout4DesktopOverlay : IDisposable
+internal sealed class DesktopGameOverlay : IDisposable
 {
     private const int PanelHotkey = 0x5401;
     private const int FollowHotkey = PanelHotkey + 1;
@@ -25,11 +24,12 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
     private readonly OverlayNearbyLocations nearby = new();
     private readonly OverlayNearbyAlerts alerts = new();
     private HwndSource? source;
-    private Fallout4OverlayWindow? view;
+    private DesktopGameOverlayWindow? view;
     private nint overlayWindow;
     private nint gameWindow;
     private uint foregroundProcessId;
-    private bool foregroundIsFallout;
+    private bool foregroundMatchesGame;
+    private DesktopOverlayProfile? activeGame;
     private bool panelOpen;
     private bool collecting;
     private (uint Panel, uint Follow)? registeredKeys;
@@ -41,7 +41,7 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
     private string? feedback;
     private TimeSpan feedbackUntil;
 
-    public Fallout4DesktopOverlay(ShellViewModel shell, Func<bool> toggleFollow, ISettingsService settings, ILogger logger)
+    public DesktopGameOverlay(ShellViewModel shell, Func<bool> toggleFollow, ISettingsService settings, ILogger logger)
     {
         this.shell = shell;
         this.toggleFollow = toggleFollow;
@@ -62,11 +62,13 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
     private void Refresh()
     {
         var map = shell.CurrentMap;
-        var profile = map is null ? null : Fallout4MapProfile.ForMap(GameMapDescriptorFactory.Create(map));
+        var profile = map is null ? null : DesktopOverlayProfile.ForMap(GameMapDescriptorFactory.Create(map));
         var activeScope = profile is null ? null : shell.LoadedLocationScope;
         if (scope != activeScope)
         {
             scope = activeScope;
+            activeGame = profile?.Game;
+            foregroundProcessId = 0;
             nearby.Reset();
             alerts.Reset();
             cards = [];
@@ -75,7 +77,7 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
         }
 
         var foreground = GetForegroundWindow();
-        if (scope is null || profile is null || !TryGetTarget(foreground) ||
+        if (scope is null || profile is not { } mapProfile || !TryGetTarget(foreground, mapProfile.Game) ||
             !TryGetGameAnchor(gameWindow, out var anchor))
         {
             SetHotkeys(null);
@@ -84,14 +86,14 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
             return;
         }
 
-        var preferences = settings.Current.GameOverlays.GetValueOrDefault(Fallout4MapProfile.OverlaySettingsKey)
-            ?? GameOverlaySettings.Default;
+        var preferences = mapProfile.Game.GetSettings(settings);
         var panel = VirtualKey(preferences.PanelScanCode, 0x76);
         var follow = VirtualKey(preferences.FollowScanCode, 0x77);
         SetHotkeys(panel != follow ? (panel, follow) : (0x76u, 0x77u));
 
         cards = nearby.Find(shell.LivePlayerLocation, shell.LoadedLocations, preferences,
-            profile.GameDistanceSquared, int.MaxValue);
+            mapProfile.DistanceSquared, int.MaxValue,
+            Math.Clamp(preferences.NearbyRadius, mapProfile.Game.MinRadius, mapProfile.Game.MaxRadius));
         var now = clock.Elapsed;
         var duration = TimeSpan.FromSeconds(Math.Clamp(preferences.NearbyNotificationSeconds,
             GameOverlaySettings.MinNotificationSeconds, GameOverlaySettings.MaxNotificationSeconds));
@@ -113,7 +115,7 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
         }
     }
 
-    private bool TryGetTarget(nint foreground)
+    private bool TryGetTarget(nint foreground, DesktopOverlayProfile game)
     {
         if (panelOpen && foreground != 0 && foreground == overlayWindow) return true;
         if (foreground == 0) return false;
@@ -121,9 +123,9 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
         if (foregroundProcessId != processId)
         {
             foregroundProcessId = processId;
-            foregroundIsFallout = IsFalloutProcess(processId);
+            foregroundMatchesGame = MatchesGameProcess(processId, game);
         }
-        if (!foregroundIsFallout) return false;
+        if (!foregroundMatchesGame) return false;
         if (gameWindow != foreground)
         {
             gameWindow = foreground;
@@ -133,13 +135,14 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
         return true;
     }
 
-    private static bool IsFalloutProcess(uint processId)
+    private static bool MatchesGameProcess(uint processId, DesktopOverlayProfile game)
     {
         if (processId == 0) return false;
         try
         {
             using var process = Process.GetProcessById((int)processId);
-            return process.ProcessName.Equals("Fallout4", StringComparison.OrdinalIgnoreCase);
+            return process.ProcessName.Equals(game.ProcessName, StringComparison.OrdinalIgnoreCase) &&
+                (game.ExecutableVersion is null || process.MainModule?.FileVersionInfo.FileVersion == game.ExecutableVersion);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
@@ -147,11 +150,11 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
         }
     }
 
-    private void Display(Fallout4OverlayNative.Point anchor, bool interactive, string? message, IReadOnlyList<OverlayNearbyLocations.Card> content)
+    private void Display(DesktopGameOverlayNative.Point anchor, bool interactive, string? message, IReadOnlyList<OverlayNearbyLocations.Card> content)
     {
         if (view is null)
         {
-            view = new Fallout4OverlayWindow();
+            view = new DesktopGameOverlayWindow();
             view.ClosePanelRequested += () => { ClosePanel(); Refresh(); };
             view.CollectRequested += Collect;
             view.DismissRequested += id =>
@@ -187,10 +190,10 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
         registeredKeys = keys;
         if (keys is not { } bindings) return;
         if (!RegisterHotKey(source.Handle, PanelHotkey, NoRepeat, bindings.Panel))
-            logger.LogWarning("Fallout 4 overlay panel hotkey could not be registered. Win32 error {Error}.",
+            logger.LogWarning("{Game} overlay panel hotkey could not be registered. Win32 error {Error}.", activeGame?.Name,
                 System.Runtime.InteropServices.Marshal.GetLastWin32Error());
         if (!RegisterHotKey(source.Handle, FollowHotkey, NoRepeat, bindings.Follow))
-            logger.LogWarning("Fallout 4 Follow Player hotkey could not be registered. Win32 error {Error}.",
+            logger.LogWarning("{Game} Follow Player hotkey could not be registered. Win32 error {Error}.", activeGame?.Name,
                 System.Runtime.InteropServices.Marshal.GetLastWin32Error());
     }
 
@@ -247,7 +250,7 @@ internal sealed class Fallout4DesktopOverlay : IDisposable
         catch (OperationCanceledException) when (stopping.IsCancellationRequested) { }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Fallout 4 overlay could not collect location {LocationId}.", id);
+            logger.LogWarning(ex, "Desktop overlay could not collect location {LocationId}.", id);
             if (!stopping.IsCancellationRequested && scope == target) ShowFeedback("Could not collect. Try again.");
         }
         finally { collecting = false; }

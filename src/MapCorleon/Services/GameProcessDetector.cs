@@ -29,6 +29,21 @@ public sealed class WindowsGameProcessDetector : IGameProcessDetector
         return null;
     }
 
+    public nint FindModuleBaseAddress(int processId, string moduleName)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            return process.Modules.Cast<ProcessModule>()
+                .FirstOrDefault(module => module.ModuleName.Equals(moduleName, StringComparison.OrdinalIgnoreCase))
+                ?.BaseAddress ?? 0;
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return 0;
+        }
+    }
+
     public bool IsRunning(string processName)
     {
         var processes = Process.GetProcessesByName(processName);

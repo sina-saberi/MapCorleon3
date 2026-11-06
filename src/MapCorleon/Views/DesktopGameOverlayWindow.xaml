@@ -1,4 +1,4 @@
-<Window x:Class="MapCorleon.Views.Fallout4OverlayWindow" x:ClassModifier="internal"
+<Window x:Class="MapCorleon.Views.DesktopGameOverlayWindow" x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MapCorleon nearby locations" Width="320" SizeToContent="Height"

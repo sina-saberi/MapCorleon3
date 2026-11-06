@@ -33,6 +33,7 @@ public interface IMapProvider
 {
     string Key { get; }
     string DisplayName { get; }
+    bool UsesLocalFile => false;
     Task<ImportResult> ImportAsync(MapImportRequest request, IProgress<ImportProgress>? progress = null, CancellationToken ct = default);
     Task<byte[]?> DownloadTileAsync(string url, CancellationToken ct = default);
 }
