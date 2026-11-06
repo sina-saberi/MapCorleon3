@@ -13,10 +13,6 @@
                    Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
       </StackPanel>
     </Border>
-    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Padding="8,5"
-            Background="#CC171D28" CornerRadius="4" IsHitTestVisible="False">
-      <TextBlock x:Name="StatusText" Text="Loading map…" Foreground="#D9E4F2"/>
-    </Border>
 
     <Button x:Name="FollowPlayerButton" HorizontalAlignment="Right" VerticalAlignment="Bottom"
             Margin="16" Padding="14,9" Click="FollowPlayer_Click" IsEnabled="False"

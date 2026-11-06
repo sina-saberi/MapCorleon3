@@ -166,7 +166,6 @@ public partial class MapView
         var center = new MPoint(projectedCenter.x, projectedCenter.y);
         var zoom = Math.Clamp((int)Math.Round(config.DefaultZoom), minimumZoom, maximumZoom);
         map.Navigator.CenterOnAndZoomTo(center, tileSchema.Resolutions[zoom].UnitsPerPixel, 0);
-        StatusText.Text = $"Mapsui • {viewModel?.VisibleLocations.Count ?? 0} locations";
     }
 
     private static Extent TileBoundsToExtent(
@@ -208,7 +207,6 @@ public partial class MapView
         map.Layers.Add(locationLayer);
         RebuildPlayerMarker();
         map.RefreshData();
-        StatusText.Text = $"Mapsui • {features.Count} locations";
     }
 
     private void RebuildPlayerMarker()
