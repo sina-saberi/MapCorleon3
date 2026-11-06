@@ -63,7 +63,7 @@
           </DockPanel>
         </Border>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="DetailScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <ScrollViewer.Resources>
             <Style TargetType="ScrollBar" BasedOn="{StaticResource {x:Type ScrollBar}}">
               <Style.Triggers>
@@ -74,7 +74,17 @@
               </Style.Triggers>
             </Style>
           </ScrollViewer.Resources>
-          <StackPanel Margin="12,16,6,4">
+          <StackPanel>
+            <StackPanel.Style>
+              <Style TargetType="StackPanel">
+                <Setter Property="Margin" Value="12,16,12,4"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding ComputedVerticalScrollBarVisibility,ElementName=DetailScroll}" Value="Visible">
+                    <Setter Property="Margin" Value="12,16,6,4"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </StackPanel.Style>
             <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding Media.Count,Converter={StaticResource CountToVisibility}}">
               <StackPanel>
                 <Button x:Name="HeroButton" Margin="0" Padding="0" Click="Hero_Click" ToolTip="Open full-screen gallery">
