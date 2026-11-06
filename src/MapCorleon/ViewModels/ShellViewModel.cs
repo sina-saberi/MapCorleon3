@@ -79,9 +79,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShowUnmarkedCommand = new RelayCommand(_ => MarkFilter = MarkFilter.Unmarked);
         SelectCommand = new RelayCommand(value =>
         {
-            if (value is not Location location) return;
-            SelectedLocation = location;
-            FocusSelectedLocation();
+            if (value is Location location) SelectAndFocusLocation(location);
         });
         ToggleMarkCommand = new AsyncCommand(ToggleMarkAsync, () => SelectedLocation is not null);
         ReloadCommand = new AsyncCommand(() => LoadAsync(preferredMapId: CurrentMap?.Id));
@@ -320,7 +318,17 @@ public sealed class ShellViewModel : ViewModelBase
             await ChangeTimelineAsync(timelines[0].Id);
     }
 
-    public void SelectLocationById(int id) => SelectedLocation = allLocations.FirstOrDefault(location => location.Id == id);
+    public void SelectLocationById(int id)
+    {
+        if (allLocations.FirstOrDefault(location => location.Id == id) is { } location)
+            SelectAndFocusLocation(location);
+    }
+
+    internal void SelectAndFocusLocation(Location location)
+    {
+        SelectedLocation = location;
+        FocusSelectedLocation();
+    }
 
     public async Task SaveProgressCategoriesAsync(IReadOnlyDictionary<int, bool> selections)
     {

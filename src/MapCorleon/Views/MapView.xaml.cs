@@ -110,23 +110,17 @@ public partial class MapView
             RebuildMap();
         }
         else if (e.PropertyName == nameof(ShellViewModel.LivePlayerLocation)) RebuildPlayerMarker();
-        else if (e.PropertyName == nameof(ShellViewModel.SelectedLocation) &&
-                 viewModel is { IsLoading: false, SelectedLocation: { } location })
-        {
-            PauseFollowingForUserNavigation();
-            var point = SphericalMercator.FromLonLat(location.Longitude, location.Latitude);
-            MapControl.Map?.Navigator.CenterOn(new MPoint(point.x, point.y), 350);
-        }
     }
 
     private void FocusLocation(Location location)
     {
-        if (MapControl.Map?.Navigator is not { OverrideZoomBounds: { } bounds } navigator) return;
+        if (MapControl.Map?.Navigator is not { OverrideResolutions: { Count: > 0 } resolutions } navigator)
+            return;
 
         PauseFollowingForUserNavigation();
         var point = SphericalMercator.FromLonLat(location.Longitude, location.Latitude);
-        var resolution = Math.Clamp(navigator.Viewport.Resolution * .75, bounds.Min, bounds.Max);
-        navigator.CenterOnAndZoomTo(new MPoint(point.x, point.y), resolution, 350);
+        var targetIndex = (int)Math.Round((resolutions.Count - 1) * .75, MidpointRounding.AwayFromZero);
+        navigator.CenterOnAndZoomTo(new MPoint(point.x, point.y), resolutions[targetIndex], 350);
     }
 
     private void LocationsChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -388,7 +382,7 @@ public partial class MapView
         if (locationLayer is null || viewModel is null) return;
         var info = e.GetMapInfo([locationLayer]);
         if (info?.Feature?.Data is not Location location) return;
-        viewModel.SelectedLocation = location;
+        viewModel.SelectAndFocusLocation(location);
         e.Handled = true;
     }
 
