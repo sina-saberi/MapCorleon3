@@ -33,76 +33,74 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Expander">
-                        <Border Background="#171F2B" BorderBrush="#2A374A" BorderThickness="1" CornerRadius="6">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <ToggleButton x:Name="HeaderToggle" IsChecked="{Binding IsExpanded,RelativeSource={RelativeSource TemplatedParent}}"
-                          Background="Transparent" BorderThickness="0" Padding="10,9" HorizontalContentAlignment="Stretch">
-                                    <ToggleButton.Template>
-                                        <ControlTemplate TargetType="ToggleButton">
-                                            <Border x:Name="HeaderChrome" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
-                                                <Grid >
-                                                    <Grid.ColumnDefinitions >
-                                                        <ColumnDefinition Width="22"/>
-                                                        <ColumnDefinition/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <Path x:Name="Chevron" Data="M 0,0 L 4,4 L 0,8" Stroke="#8192A8" StrokeThickness="1.4"
-                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                                          Width="5" Height="9" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                          RenderTransformOrigin="0.5,0.5" Margin="4,0,0,0">
-                                                        <Path.RenderTransform>
-                                                            <RotateTransform x:Name="ChevronRotation" Angle="0"/>
-                                                        </Path.RenderTransform>
-                                                    </Path>
-                                                    <ContentPresenter Grid.Column="1" ContentSource="Content" VerticalAlignment="Center"/>
-                                                </Grid>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="HeaderChrome" Property="Background" Value="#202B3B"/>
-                                                </Trigger>
-                                                <Trigger Property="IsChecked" Value="True">
-                                                    <Trigger.EnterActions>
-                                                        <BeginStoryboard>
-                                                            <Storyboard>
-                                                                <DoubleAnimation Storyboard.TargetName="ChevronRotation" Storyboard.TargetProperty="Angle"
-                                                                                 To="90" Duration="0:0:0.18">
-                                                                    <DoubleAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </DoubleAnimation.EasingFunction>
-                                                                </DoubleAnimation>
-                                                            </Storyboard>
-                                                        </BeginStoryboard>
-                                                    </Trigger.EnterActions>
-                                                    <Trigger.ExitActions>
-                                                        <BeginStoryboard>
-                                                            <Storyboard>
-                                                                <DoubleAnimation Storyboard.TargetName="ChevronRotation" Storyboard.TargetProperty="Angle"
-                                                                                 To="0" Duration="0:0:0.18">
-                                                                    <DoubleAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </DoubleAnimation.EasingFunction>
-                                                                </DoubleAnimation>
-                                                            </Storyboard>
-                                                        </BeginStoryboard>
-                                                    </Trigger.ExitActions>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </ToggleButton.Template>
-                                    <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"/>
-                                </ToggleButton>
-                                <Border x:Name="ContentSite" Grid.Row="1" Padding="6,0,6,7" Opacity="0" IsHitTestVisible="False">
-                                    <Border.LayoutTransform>
-                                        <ScaleTransform x:Name="ContentScale" ScaleY="0.001"/>
-                                    </Border.LayoutTransform>
-                                    <ContentPresenter ContentSource="Content"/>
-                                </Border>
-                            </Grid>
-                        </Border>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ToggleButton x:Name="HeaderToggle" IsChecked="{Binding IsExpanded,RelativeSource={RelativeSource TemplatedParent}}"
+                      Background="Transparent" BorderThickness="0" Padding="10,9" HorizontalContentAlignment="Stretch">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="HeaderChrome" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                            <Grid >
+                                                <Grid.ColumnDefinitions >
+                                                    <ColumnDefinition Width="22"/>
+                                                    <ColumnDefinition/>
+                                                </Grid.ColumnDefinitions>
+                                                <Path x:Name="Chevron" Data="M 0,0 L 4,4 L 0,8" Stroke="#8192A8" StrokeThickness="1.4"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                      Width="5" Height="9" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                      RenderTransformOrigin="0.5,0.5" Margin="4,0,0,0">
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform x:Name="ChevronRotation" Angle="0"/>
+                                                    </Path.RenderTransform>
+                                                </Path>
+                                                <ContentPresenter Grid.Column="1" ContentSource="Content" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="HeaderChrome" Property="Background" Value="#202B3B"/>
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="ChevronRotation" Storyboard.TargetProperty="Angle"
+                                                                             To="90" Duration="0:0:0.18">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="ChevronRotation" Storyboard.TargetProperty="Angle"
+                                                                             To="0" Duration="0:0:0.18">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                                <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"/>
+                            </ToggleButton>
+                            <Border x:Name="ContentSite" Grid.Row="1" Padding="6,0,6,7" Opacity="0" IsHitTestVisible="False">
+                                <Border.LayoutTransform>
+                                    <ScaleTransform x:Name="ContentScale" ScaleY="0.001"/>
+                                </Border.LayoutTransform>
+                                <ContentPresenter ContentSource="Content"/>
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter TargetName="ContentSite" Property="IsHitTestVisible" Value="True"/>
@@ -224,7 +222,7 @@
                 </Button>
             </StackPanel>
 
-            <Border Grid.Row="3" Margin="12,0,12,12" Padding="5" BorderBrush="#2A374A" BorderThickness="1" CornerRadius="6">
+            <Border Grid.Row="3" Margin="12,0,12,12" Padding="5" Background="#171F2B" BorderBrush="#2A374A" BorderThickness="1" CornerRadius="6">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
                     <StackPanel>
                         <ItemsControl ItemsSource="{Binding CategoryGroups}">
