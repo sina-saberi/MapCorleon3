@@ -84,19 +84,30 @@
                   <Grid Height="190" Background="#0E131B">
                     <Image x:Name="HeroImage" Stretch="UniformToFill"/>
                     <Border VerticalAlignment="Bottom" Background="#B30D121A" Padding="10,7">
-                      <DockPanel><TextBlock x:Name="MediaCountText" DockPanel.Dock="Right" Foreground="#CBD5E1"/>
-                        <TextBlock x:Name="HeroCaption" Foreground="White" TextTrimming="CharacterEllipsis"/></DockPanel>
+                      <TextBlock x:Name="HeroCaption" Foreground="White" TextTrimming="CharacterEllipsis"/>
                     </Border>
                   </Grid>
                 </Button>
-                <ListBox x:Name="ThumbnailList" ItemsSource="{Binding Media}" SelectionChanged="Thumbnail_SelectionChanged"
-                         BorderThickness="0" Padding="7" ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                         ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                  <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
-                  <ListBox.ItemTemplate><DataTemplate><Border Width="58" Height="45" Background="#0E131B">
-                    <Image Source="{Binding RelativePath}" Stretch="UniformToFill"/>
-                  </Border></DataTemplate></ListBox.ItemTemplate>
-                </ListBox>
+                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="5,3">
+                  <DockPanel>
+                    <TextBlock x:Name="MediaCountText" DockPanel.Dock="Right" Margin="8,0,4,0"
+                               VerticalAlignment="Center" Foreground="#CBD5E1"/>
+                    <ListBox x:Name="ThumbnailList" ItemsSource="{Binding Media}" SelectionChanged="Thumbnail_SelectionChanged"
+                             BorderThickness="0" Padding="0" Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                      <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                          <Setter Property="Padding" Value="2"/>
+                          <Setter Property="Margin" Value="0,0,2,0"/>
+                        </Style>
+                      </ListBox.ItemContainerStyle>
+                      <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
+                      <ListBox.ItemTemplate><DataTemplate><Border Width="38" Height="28" Background="#0E131B">
+                        <Image Source="{Binding RelativePath}" Stretch="UniformToFill"/>
+                      </Border></DataTemplate></ListBox.ItemTemplate>
+                    </ListBox>
+                  </DockPanel>
+                </Border>
               </StackPanel>
             </Border>
 
