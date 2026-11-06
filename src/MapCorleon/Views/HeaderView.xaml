@@ -31,8 +31,24 @@
         </Border>
         <StackPanel VerticalAlignment="Center">
           <TextBlock Text="MapCorleon" Foreground="White" FontSize="19" FontWeight="SemiBold"/>
-          <TextBlock Text="{Binding CurrentMap.DisplayName,TargetNullValue=No map selected,FallbackValue=No map selected}"
-                     Foreground="#8FA3BD" FontSize="11" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+          <Grid HorizontalAlignment="Left" Margin="0,2,0,0">
+            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding CurrentMap.DisplayName,TargetNullValue=No map selected,FallbackValue=No map selected}"
+                       Foreground="#8FA3BD" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            <Border Grid.Column="1" Margin="8,0,0,0" Padding="6,1" Background="#253248" CornerRadius="8"
+                    ToolTip="Total locations on this map">
+              <Border.Style>
+                <Style TargetType="Border">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding CurrentMap}" Value="{x:Null}">
+                      <Setter Property="Visibility" Value="Collapsed"/>
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </Border.Style>
+              <TextBlock Text="{Binding TotalCount,StringFormat={}{0:N0}}" Foreground="#9CC7FF" FontSize="11"/>
+            </Border>
+          </Grid>
         </StackPanel>
       </DockPanel>
     </DockPanel>

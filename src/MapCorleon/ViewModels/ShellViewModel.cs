@@ -133,6 +133,7 @@ public sealed class ShellViewModel : ViewModelBase
     public bool IsMarkedFilter => MarkFilter == MarkFilter.Marked;
     public bool IsUnmarkedFilter => MarkFilter == MarkFilter.Unmarked;
     public string MarkActionText => SelectedLocation?.Marks.Count > 0 ? "Unmark" : "Mark";
+    public int TotalCount => allLocations.Count;
     public int PickedCount => allLocations.Count(location => location.Marks.Count > 0);
     public string ProgressText => $"{trackedProgress.Picked} locations picked from {trackedProgress.Total} total";
     public string ProgressSummary => $"{trackedProgress.Picked:N0} of {trackedProgress.Total:N0} marked";
@@ -384,6 +385,7 @@ public sealed class ShellViewModel : ViewModelBase
         ReplaceCollection(VisibleLocations, visible);
         ReplaceCollection(SearchResults, IsSearchActive ? visible : []);
 
+        OnPropertyChanged(nameof(TotalCount));
         OnPropertyChanged(nameof(PickedCount));
     }
 
