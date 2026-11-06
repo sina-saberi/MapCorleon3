@@ -191,7 +191,7 @@
                         <ItemsControl ItemsSource="{Binding CategoryGroups}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Expander Style="{StaticResource GroupExpander}" IsExpanded="True">
+                                    <Expander Style="{StaticResource GroupExpander}" IsExpanded="{Binding IsExpanded,Mode=TwoWay}">
                                         <Expander.Header>
                                             <Button Padding="4,0" Margin="0" Background="Transparent" BorderThickness="0"
                                                     FontWeight="SemiBold" Foreground="#D8E2EF" HorizontalContentAlignment="Left"

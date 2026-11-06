@@ -10,6 +10,7 @@ public sealed record AppSettings(
     string? CurrentMapName = null,
     int? CurrentTimelineId = null)
 {
+    public int? CurrentMapId { get; init; }
     public HashSet<int> ExcludedProgressCategoryIds { get; init; } = [];
     public Dictionary<string, GameOverlaySettings> GameOverlays { get; init; } = new(StringComparer.Ordinal);
 

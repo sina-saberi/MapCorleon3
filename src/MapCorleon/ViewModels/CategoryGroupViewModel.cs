@@ -2,8 +2,10 @@ using MapCorleon.Models;
 
 namespace MapCorleon.ViewModels;
 
-public sealed class CategoryGroupViewModel
+public sealed class CategoryGroupViewModel : ViewModelBase
 {
+    private bool isExpanded = true;
+
     public CategoryGroupViewModel(Group group, IReadOnlyList<Category> categories)
     {
         Group = group;
@@ -12,6 +14,12 @@ public sealed class CategoryGroupViewModel
 
     public Group Group { get; }
     public string Name => Group.Name;
+
+    public bool IsExpanded
+    {
+        get => isExpanded;
+        set => Set(ref isExpanded, value);
+    }
     public IReadOnlyList<Category> Categories { get; }
 }
 

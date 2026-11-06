@@ -35,6 +35,8 @@ public partial class MapView
     private string? spriteSource;
     private readonly DispatcherTimer markerRefreshTimer;
     private readonly DispatcherTimer followResumeTimer;
+    private readonly DispatcherTimer saveViewportTimer;
+    private string? viewportSessionKey;
     private readonly PlayerMapFollowController playerFollow = new();
     private readonly IMapPickService mapPicker;
 
@@ -55,6 +57,8 @@ public partial class MapView
             RefreshFollowButton();
             if (playerFollow.ShouldCenter) CenterOnPlayer();
         };
+        saveViewportTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(750) };
+        saveViewportTimer.Tick += (_, _) => SaveViewport();
         markerRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
         markerRefreshTimer.Tick += (_, _) => { markerRefreshTimer.Stop(); RebuildLocations(); };
         Loaded += (_, _) =>
@@ -85,6 +89,7 @@ public partial class MapView
 
     private void Detach()
     {
+        StopTrackingViewport();
         followResumeTimer.Stop();
         playerFollow.Resume();
         if (viewModel is not null)
@@ -105,7 +110,8 @@ public partial class MapView
             RebuildMap();
         }
         else if (e.PropertyName == nameof(ShellViewModel.LivePlayerLocation)) RebuildPlayerMarker();
-        else if (e.PropertyName == nameof(ShellViewModel.SelectedLocation) && viewModel?.SelectedLocation is { } location)
+        else if (e.PropertyName == nameof(ShellViewModel.SelectedLocation) &&
+                 viewModel is { IsLoading: false, SelectedLocation: { } location })
         {
             PauseFollowingForUserNavigation();
             var point = SphericalMercator.FromLonLat(location.Longitude, location.Latitude);
@@ -130,6 +136,7 @@ public partial class MapView
 
     private void RebuildMap()
     {
+        StopTrackingViewport();
         var config = viewModel?.CurrentMapConfig;
         if (config is null || string.IsNullOrWhiteSpace(config.TilePattern)) return;
         spriteSource = null;
@@ -160,9 +167,9 @@ public partial class MapView
         var map = new Mapsui.Map { CRS = "EPSG:3857", BackColor = new Color(17, 25, 35) };
         map.Layers.Add(new TileLayer(tileSource, httpClient: tileHttpClient) { Name = $"{provider.Key} Tiles" });
         map.Navigator.OverrideResolutions = coverage.ZoomLevels.Select(x => tileSchema.Resolutions[x].UnitsPerPixel).ToList();
-        map.Navigator.OverrideZoomBounds = new MMinMax(
-            tileSchema.Resolutions[maximumZoom].UnitsPerPixel,
-            tileSchema.Resolutions[minimumZoom].UnitsPerPixel);
+        var minResolution = tileSchema.Resolutions[maximumZoom].UnitsPerPixel;
+        var maxResolution = tileSchema.Resolutions[minimumZoom].UnitsPerPixel;
+        map.Navigator.OverrideZoomBounds = new MMinMax(minResolution, maxResolution);
         map.Navigator.OverridePanBounds = new MRect(
             tileSchema.Extent.MinX, tileSchema.Extent.MinY,
             tileSchema.Extent.MaxX, tileSchema.Extent.MaxY);
@@ -177,7 +184,44 @@ public partial class MapView
         var projectedCenter = SphericalMercator.FromLonLat(longitude, latitude);
         var center = new MPoint(projectedCenter.x, projectedCenter.y);
         var zoom = Math.Clamp((int)Math.Round(config.DefaultZoom), minimumZoom, maximumZoom);
-        map.Navigator.CenterOnAndZoomTo(center, tileSchema.Resolutions[zoom].UnitsPerPixel, 0);
+        var resolution = tileSchema.Resolutions[zoom].UnitsPerPixel;
+        viewportSessionKey = viewModel?.MapSessionKey;
+        if (viewModel?.MapSessions.Read(viewportSessionKey).Viewport is { } saved &&
+            double.IsFinite(saved.X) && double.IsFinite(saved.Y) &&
+            double.IsFinite(saved.Resolution) && saved.Resolution > 0)
+        {
+            center = new MPoint(saved.X, saved.Y);
+            resolution = Math.Clamp(saved.Resolution, minResolution, maxResolution);
+        }
+
+        map.Navigator.CenterOnAndZoomTo(center, resolution, 0);
+        map.Navigator.FetchRequested += ViewportChanged;
+    }
+
+    private void ViewportChanged(object? sender, EventArgs e)
+    {
+        saveViewportTimer.Stop();
+        saveViewportTimer.Start();
+    }
+
+    private void StopTrackingViewport()
+    {
+        SaveViewport();
+        if (MapControl.Map is { } map)
+            map.Navigator.FetchRequested -= ViewportChanged;
+        viewportSessionKey = null;
+    }
+
+    internal void SaveViewport()
+    {
+        saveViewportTimer.Stop();
+        if (viewportSessionKey is not { } key || MapControl.Map?.Navigator.Viewport is not { } viewport ||
+            !double.IsFinite(viewport.CenterX) || !double.IsFinite(viewport.CenterY) ||
+            !double.IsFinite(viewport.Resolution) || viewport.Resolution <= 0)
+            return;
+
+        var saved = new MapViewportState(viewport.CenterX, viewport.CenterY, viewport.Resolution);
+        viewModel?.MapSessions.Update(key, state => state with { Viewport = saved });
     }
 
     private static Extent TileBoundsToExtent(

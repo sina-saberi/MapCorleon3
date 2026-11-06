@@ -29,6 +29,7 @@ public partial class App : Application
     private static IHost CreateHost() => Host.CreateDefaultBuilder().ConfigureServices(services =>
     {
         services.AddSingleton<ISettingsService, JsonSettingsService>();
+        services.AddSingleton<MapSessionStore>();
         services.AddDbContextFactory<AppDbContext>((provider, options) =>
             options.UseSqlite($"Data Source={provider.GetRequiredService<ISettingsService>().Current.DatabasePath}"));
         services.AddSingleton(CreateImportHttpClient());

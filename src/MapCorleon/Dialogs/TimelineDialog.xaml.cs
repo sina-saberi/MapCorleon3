@@ -37,7 +37,7 @@ public partial class TimelineDialog : Window
     private async void Map_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (busy || MapBox.SelectedItem is not Map map || map.Id == shell.CurrentMap?.Id) return;
-        await RunAsync(() => shell.LoadAsync(map.Name));
+        await RunAsync(() => shell.LoadAsync(preferredMapId: map.Id));
     }
 
     private async void Activate_Click(object sender, RoutedEventArgs e)

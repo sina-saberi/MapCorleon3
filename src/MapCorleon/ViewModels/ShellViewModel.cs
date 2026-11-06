@@ -19,6 +19,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly ISearchService searchService;
     private readonly IEventBus eventBus;
     private readonly ISettingsService settingsService;
+    private readonly string sessionDatabasePath;
     private readonly IImportTaskService importTasks;
     private readonly IPlayerLocationCoordinator playerLocationCoordinator;
     private readonly IReadOnlyList<IGameLauncher> gameLaunchers;
@@ -45,6 +46,7 @@ public sealed class ShellViewModel : ViewModelBase
         ISearchService searchService,
         IEventBus eventBus,
         ISettingsService settingsService,
+        MapSessionStore mapSessions,
         IImportTaskService importTasks,
         IPlayerLocationCoordinator playerLocationCoordinator,
         IEnumerable<IGameLauncher> gameLaunchers)
@@ -55,6 +57,8 @@ public sealed class ShellViewModel : ViewModelBase
         this.searchService = searchService;
         this.eventBus = eventBus;
         this.settingsService = settingsService;
+        sessionDatabasePath = settingsService.Current.DatabasePath.ToUpperInvariant();
+        MapSessions = mapSessions;
         this.importTasks = importTasks;
         this.playerLocationCoordinator = playerLocationCoordinator;
         this.gameLaunchers = gameLaunchers.ToList();
@@ -80,7 +84,7 @@ public sealed class ShellViewModel : ViewModelBase
             FocusSelectedLocation();
         });
         ToggleMarkCommand = new AsyncCommand(ToggleMarkAsync, () => SelectedLocation is not null);
-        ReloadCommand = new AsyncCommand(() => LoadAsync(currentMapName));
+        ReloadCommand = new AsyncCommand(() => LoadAsync(preferredMapId: CurrentMap?.Id));
         LaunchGameCommand = new RelayCommand(_ => LaunchGame(), _ => CanLaunchGame);
         ToggleCategoryCommand = new RelayCommand(category =>
         {
@@ -176,6 +180,11 @@ public sealed class ShellViewModel : ViewModelBase
         set => Set(ref isLoading, value);
     }
 
+    internal MapSessionStore MapSessions { get; }
+    internal string? MapSessionKey => CurrentMap is { } map
+        ? $"{sessionDatabasePath}|{map.GameId}|{map.Id}"
+        : null;
+
     public Map? CurrentMap
     {
         get => currentMap;
@@ -206,6 +215,8 @@ public sealed class ShellViewModel : ViewModelBase
         set
         {
             if (!Set(ref selectedLocation, value)) return;
+            if (LoadedLocationScope is not null)
+                MapSessions.Update(MapSessionKey, state => state with { LocationId = value?.Id });
             eventBus.Select(value);
             ((AsyncCommand)ToggleMarkCommand).RaiseCanExecuteChanged();
             OnPropertyChanged(nameof(MarkActionText));
@@ -226,7 +237,7 @@ public sealed class ShellViewModel : ViewModelBase
         }
     }
 
-    public async Task LoadAsync(string? preferredMapName = null)
+    public async Task LoadAsync(string? preferredMapName = null, int? preferredMapId = null)
     {
         loadedLocationScope = null;
         IsLoading = true;
@@ -246,7 +257,11 @@ public sealed class ShellViewModel : ViewModelBase
             }
 
             var wantedMap = preferredMapName ?? settingsService.Current.CurrentMapName;
-            var map = maps.FirstOrDefault(item => item.Name == wantedMap) ?? maps[0];
+            var wantedId = preferredMapId ?? (preferredMapName is null ? settingsService.Current.CurrentMapId : null);
+            var map = maps.FirstOrDefault(item => item.Id == wantedId &&
+                (preferredMapId.HasValue || item.Name == wantedMap))
+                ?? maps.FirstOrDefault(item => item.Name == wantedMap)
+                ?? maps[0];
 
             currentMapName = map.Name;
             OnPropertyChanged(nameof(CurrentMapName));
@@ -257,14 +272,16 @@ public sealed class ShellViewModel : ViewModelBase
             await LoadGroupsAsync(map.Id);
             var timelines = await ReadTimelinesAsync(map.Id);
             ReplaceCollection(Timelines, timelines);
-            SelectedTimeline = timelines.FirstOrDefault(timeline => timeline.Id == settingsService.Current.CurrentTimelineId)
+            var session = MapSessions.Read(MapSessionKey);
+            var wantedTimeline = session.TimelineId ?? settingsService.Current.CurrentTimelineId;
+            SelectedTimeline = timelines.FirstOrDefault(timeline => timeline.Id == wantedTimeline)
                 ?? timelines.FirstOrDefault();
 
             var timelineId = SelectedTimeline?.Id ?? 0;
             allLocations = await locationService.LoadAsync(map.Id, timelineId);
             loadedLocationScope = (map.Id, timelineId);
             UpdateCategoryProgress();
-            SelectedLocation = null;
+            SelectedLocation = allLocations.FirstOrDefault(location => location.Id == session.LocationId);
             RefreshLocations();
             await PersistSelectionAsync();
         }
@@ -284,7 +301,8 @@ public sealed class ShellViewModel : ViewModelBase
         allLocations = locations;
         loadedLocationScope = (map.Id, timelineId);
         UpdateCategoryProgress();
-        SelectedLocation = null;
+        var selectedId = SelectedLocation?.Id;
+        SelectedLocation = allLocations.FirstOrDefault(location => location.Id == selectedId);
         RefreshLocations();
         await PersistSelectionAsync();
     }
@@ -471,7 +489,32 @@ public sealed class ShellViewModel : ViewModelBase
             MessageBox.Show(result.Message, "Launch game", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
-    private void RefreshCategoryGroups() => CategoryGroups = CategoryGroupFilter.Apply(Groups, Query);
+    private void RefreshCategoryGroups()
+    {
+        var key = MapSessionKey;
+        var collapsed = MapSessions.Read(key).CollapsedGroups;
+        var groups = CategoryGroupFilter.Apply(Groups, Query);
+        foreach (var group in groups)
+        {
+            group.IsExpanded = !collapsed.Contains(group.Group.Id);
+            group.PropertyChanged += (_, change) =>
+            {
+                if (change.PropertyName == nameof(CategoryGroupViewModel.IsExpanded))
+                    SaveGroupExpansion(key, group);
+            };
+        }
+        CategoryGroups = groups;
+    }
+
+    private void SaveGroupExpansion(string? key, CategoryGroupViewModel group)
+    {
+        MapSessions.Update(key, state =>
+        {
+            var collapsed = new HashSet<int>(state.CollapsedGroups);
+            var changed = group.IsExpanded ? collapsed.Remove(group.Group.Id) : collapsed.Add(group.Group.Id);
+            return changed ? state with { CollapsedGroups = collapsed } : state;
+        });
+    }
 
     private async Task ReloadMediaAsync()
     {
@@ -502,11 +545,20 @@ public sealed class ShellViewModel : ViewModelBase
         }
     }
 
-    private Task PersistSelectionAsync() => settingsService.SaveAsync(settingsService.Current with
+    private Task PersistSelectionAsync()
     {
-        CurrentMapName = currentMapName,
-        CurrentTimelineId = selectedTimeline?.Id
-    });
+        MapSessions.Update(MapSessionKey, state => state with
+        {
+            LocationId = SelectedLocation?.Id,
+            TimelineId = SelectedTimeline?.Id
+        });
+        return settingsService.SaveAsync(settingsService.Current with
+        {
+            CurrentMapName = currentMapName,
+            CurrentMapId = CurrentMap?.Id,
+            CurrentTimelineId = selectedTimeline?.Id
+        });
+    }
 
     private static void ReplaceCollection<T>(ObservableCollection<T> target, IEnumerable<T> values)
     {

@@ -119,7 +119,7 @@ public partial class LocationEditorDialog : Window
             foreach (var image in images)
                 await service.AddMediaAsync(location.Id, image.FilePath);
 
-            await shell.LoadAsync(shell.CurrentMapName);
+            await shell.LoadAsync(preferredMapId: shell.CurrentMap?.Id);
             shell.SelectLocationById(location.Id);
             Close();
         }
@@ -137,7 +137,7 @@ public partial class LocationEditorDialog : Window
 
         await App.Services.GetRequiredService<ILocationService>().DeleteAsync(editing.Id);
         if (DataContext is ShellViewModel vm)
-            await vm.LoadAsync(vm.CurrentMapName);
+            await vm.LoadAsync(preferredMapId: vm.CurrentMap?.Id);
         Close();
     }
 
