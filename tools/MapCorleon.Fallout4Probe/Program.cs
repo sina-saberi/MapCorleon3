@@ -4,15 +4,16 @@ using MapCorleon.Games.Fallout4;
 using MapCorleon.Services;
 
 var seconds = 120;
-if (args.Length > 1 || (args.Length == 1 && (!int.TryParse(args[0], out seconds) || seconds is < 1 or > 900)))
+var provider = new Fallout4PlayerLocationProvider(new WindowsGameProcessDetector(), new WindowsProcessMemoryReader());
+var map = new GameMapDescriptor(0, "Fallout 4", args.Length == 2 ? args[1] : "Commonwealth");
+if (args.Length > 2 || (args.Length > 0 && (!int.TryParse(args[0], out seconds) || seconds is < 1 or > 900)) ||
+    !provider.Supports(map))
 {
-    Console.WriteLine("Usage: MapCorleon.Fallout4Probe [seconds]");
-    Console.WriteLine("Reads a running Fallout4.exe once per second and prints Commonwealth coordinates. Press Ctrl+C to stop.");
+    Console.WriteLine("Usage: MapCorleon.Fallout4Probe [seconds] [Commonwealth | \"Far Harbor\" | \"Nuka-World\"]");
+    Console.WriteLine("Reads a running Fallout4.exe once per second and prints coordinates for the selected map. Press Ctrl+C to stop.");
     return args is ["--help"] or ["-h"] ? 0 : 2;
 }
 
-var provider = new Fallout4PlayerLocationProvider(new WindowsGameProcessDetector(), new WindowsProcessMemoryReader());
-var map = new GameMapDescriptor(0, "Fallout 4", "Commonwealth");
 using var stop = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>
 {

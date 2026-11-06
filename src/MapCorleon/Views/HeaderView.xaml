@@ -136,11 +136,11 @@
           <StackPanel Orientation="Horizontal">
             <Button Command="{Binding LaunchGameCommand}" Style="{StaticResource HeaderAction}" ToolTip="Launch game"
                     AutomationProperties.Name="Launch game"
-                    Visibility="{Binding IsPlayerTrackingSupported,Converter={StaticResource BoolToVisibility}}">
+                    Visibility="{Binding CanLaunchGame,Converter={StaticResource BoolToVisibility}}">
               <Path Data="M8,5 L19,12 L8,19 Z" Fill="#C8D7E9" StrokeThickness="0" Stretch="Uniform" Width="17" Height="17"/>
             </Button>
             <Border Width="1" Height="18" Background="#34465F" Margin="3,0" VerticalAlignment="Center"
-                    Visibility="{Binding IsPlayerTrackingSupported,Converter={StaticResource BoolToVisibility}}"/>
+                    Visibility="{Binding CanLaunchGame,Converter={StaticResource BoolToVisibility}}"/>
             <Button Click="Timeline_Click" Style="{StaticResource HeaderAction}" ToolTip="Maps and timelines"
                     AutomationProperties.Name="Maps and timelines">
               <Path Data="M3,5 L8,3 L16,5 L21,3 L21,19 L16,21 L8,19 L3,21 Z M8,3 L8,19 M16,5 L16,21"

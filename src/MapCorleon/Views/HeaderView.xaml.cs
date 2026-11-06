@@ -43,8 +43,11 @@ public partial class HeaderView : UserControl
         TaskProgress.Value = tasks.Percentage;
         TaskPanel.ToolTip = $"{tasks.ActiveTaskLabel} — {tasks.Percentage}%";
     }
-    private void Settings_Click(object sender, RoutedEventArgs e) =>
-        new SettingsDialog((DataContext as ShellViewModel)?.CurrentMap) { Owner = Owner }.ShowDialog();
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        var shell = DataContext as ShellViewModel;
+        new SettingsDialog(shell?.CurrentMap, shell?.GameLaunchSettingsMap) { Owner = Owner }.ShowDialog();
+    }
     private void Import_Click(object sender, RoutedEventArgs e)
     {
         new ImportDialog { Owner = Owner }.ShowDialog();

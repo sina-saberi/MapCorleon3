@@ -10,13 +10,13 @@ public sealed class Fallout4PlayerLocationProvider(
     private IProcessMemorySession? session;
     private GameProcessInfo? attachedProcess;
 
-    public string Key => "fallout4:commonwealth";
+    public string Key => "fallout4";
 
     public PlayerLocationProviderMetadata Metadata { get; } = new(
         "FALLOUT 4 PLAYER TRACKING",
-        "Launch settings apply to the Commonwealth map. Tracking reads the running Fallout4.exe process.");
+        "Tracking reads the running Fallout4.exe process for the selected Fallout 4 map.");
 
-    public bool Supports(GameMapDescriptor map) => Fallout4GameIdentity.IsCommonwealth(map);
+    public bool Supports(GameMapDescriptor map) => Fallout4MapProfile.ForMap(map) is not null;
 
     public Task<PlayerLocationReadResult> ReadAsync(GameMapDescriptor map, CancellationToken ct)
     {
@@ -26,8 +26,8 @@ public sealed class Fallout4PlayerLocationProvider(
 
     private PlayerLocationReadResult Read(GameMapDescriptor map)
     {
-        if (!Supports(map))
-            return Unavailable("Only the Fallout 4 Commonwealth map is supported.");
+        if (Fallout4MapProfile.ForMap(map) is not { } mapProfile)
+            return Unavailable("The selected Fallout 4 map is not supported.");
 
         var process = processDetector.Find(Fallout4GameIdentity.ProcessName);
         if (process is null)
@@ -53,7 +53,7 @@ public sealed class Fallout4PlayerLocationProvider(
                 attachedProcess = process;
             }
 
-            return ReadLocation(session!, process.ModuleBaseAddress, profile);
+            return ReadLocation(session!, process.ModuleBaseAddress, profile, mapProfile);
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
@@ -63,7 +63,7 @@ public sealed class Fallout4PlayerLocationProvider(
     }
 
     private static PlayerLocationReadResult ReadLocation(
-        IProcessMemorySession memory, nint moduleBase, Fallout4MemoryProfile profile)
+        IProcessMemorySession memory, nint moduleBase, Fallout4MemoryProfile profile, Fallout4MapProfile mapProfile)
     {
         var singletonAddress = moduleBase + profile.PlayerSingletonOffset;
         var player = memory.ReadPointer(singletonAddress);
@@ -84,7 +84,7 @@ public sealed class Fallout4PlayerLocationProvider(
             return Unavailable($"Cell 0x{cellId:X8} has no readable worldspace.");
 
         var worldspaceId = memory.ReadUInt32(worldspace + Fallout4MemoryProfile.FormIdOffset);
-        if (worldspaceId != Fallout4MemoryProfile.CommonwealthWorldspaceFormId)
+        if (worldspaceId != mapProfile.WorldspaceId)
             return new PlayerLocationReadResult(PlayerLocationReadStatus.OutsideSupportedWorldspace,
                 Diagnostic: $"Worldspace 0x{worldspaceId:X8}, cell 0x{cellId:X8}.");
 
@@ -99,7 +99,7 @@ public sealed class Fallout4PlayerLocationProvider(
         if (memory.ReadPointer(singletonAddress) != player || memory.ReadPointer(parentCellAddress) != cell)
             return Unavailable("Fallout 4 player or cell changed during the read.");
 
-        return new PlayerLocationReadResult(PlayerLocationReadStatus.Success, Fallout4MemoryProfile.Project(position),
+        return new PlayerLocationReadResult(PlayerLocationReadStatus.Success, mapProfile.Project(position),
             $"Worldspace 0x{worldspaceId:X8}, cell 0x{cellId:X8}.");
     }
 

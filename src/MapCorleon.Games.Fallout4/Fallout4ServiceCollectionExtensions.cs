@@ -16,6 +16,6 @@ public static class Fallout4ServiceCollectionExtensions
         : ConfiguredGameLauncher(detector, starter, Fallout4GameIdentity.ProcessName, "Fallout 4")
     {
         public override string Key => "fallout4";
-        public override bool Supports(GameMapDescriptor map) => Fallout4GameIdentity.IsCommonwealth(map);
+        public override bool Supports(GameMapDescriptor map) => Fallout4GameIdentity.IsFallout4(map);
     }
 }

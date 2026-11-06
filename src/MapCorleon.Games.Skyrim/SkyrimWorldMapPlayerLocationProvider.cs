@@ -25,23 +25,28 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
     public string Key => "skyrim-se:skyrim-world";
     public PlayerLocationProviderMetadata Metadata { get; } = new(
         "SKYRIM PLAYER TRACKING",
-        "These launch settings belong only to the selected Skyrim map. Tracking always attaches to SkyrimSE.exe.");
+        "Tracking reads the running SkyrimSE.exe process for the selected Skyrim map.");
 
-    public bool Supports(GameMapDescriptor map) => SkyrimGameIdentity.IsWorldMap(map);
+    public bool Supports(GameMapDescriptor map) => SkyrimGameIdentity.IsTrackingMap(map);
 
     public Task<PlayerLocationReadResult> ReadAsync(GameMapDescriptor map, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+        return Task.FromResult(Read(map));
+    }
+
+    private PlayerLocationReadResult Read(GameMapDescriptor map)
+    {
         if (!Supports(map))
-            return Task.FromResult(new PlayerLocationReadResult(
+            return new PlayerLocationReadResult(
                 PlayerLocationReadStatus.UnableToRead,
-                Diagnostic: "The selected map is not supported."));
+                Diagnostic: "The selected map is not supported.");
 
         var process = processDetector.Find(TargetProcessName);
         if (process is null)
         {
             Detach();
-            return Task.FromResult(new PlayerLocationReadResult(PlayerLocationReadStatus.GameNotRunning));
+            return new PlayerLocationReadResult(PlayerLocationReadStatus.GameNotRunning);
         }
 
         try
@@ -51,9 +56,9 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
                 Detach();
                 var profile = Profiles.FirstOrDefault(candidate => candidate.SupportsVersion(process.FileVersion));
                 if (profile is null)
-                    return Task.FromResult(new PlayerLocationReadResult(
+                    return new PlayerLocationReadResult(
                         PlayerLocationReadStatus.UnsupportedGameVersion,
-                        Diagnostic: $"SkyrimSE.exe {process.FileVersion} is not supported."));
+                        Diagnostic: $"SkyrimSE.exe {process.FileVersion} is not supported.");
 
                 session = memoryReader.Open(process.Id);
                 attachedProcessId = process.Id;
@@ -70,9 +75,9 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
 
             var playerCharacter = session!.ReadPointer(playerCharacterSingletonAddress);
             if (!IsLikelyPointer(playerCharacter))
-                return Task.FromResult(new PlayerLocationReadResult(
+                return new PlayerLocationReadResult(
                     PlayerLocationReadStatus.UnableToRead,
-                    Diagnostic: "Skyrim PlayerCharacter is temporarily unavailable."));
+                    Diagnostic: "Skyrim PlayerCharacter is temporarily unavailable.");
             if (lastPlayerCharacter != playerCharacter)
             {
                 logger.LogDebug("Resolved Skyrim PlayerCharacter pointer 0x{PlayerCharacter:X}.", playerCharacter);
@@ -81,9 +86,9 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
 
             var parentCell = session.ReadPointer(playerCharacter + attachedProfile!.Layout.PlayerParentCellOffset);
             if (!IsLikelyPointer(parentCell))
-                return Task.FromResult(new PlayerLocationReadResult(
+                return new PlayerLocationReadResult(
                     PlayerLocationReadStatus.UnableToRead,
-                    Diagnostic: "Skyrim parent cell is temporarily unavailable."));
+                    Diagnostic: "Skyrim parent cell is temporarily unavailable.");
 
             var cellFormId = session.ReadUInt32(parentCell + attachedProfile.Layout.CellFormIdOffset);
             var cellFlags = session.ReadUInt16(parentCell + attachedProfile.Layout.CellFlagsOffset);
@@ -99,9 +104,24 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
                 lastInteriorState = isInterior;
             }
             if (isInterior)
-                return Task.FromResult(new PlayerLocationReadResult(
+                return new PlayerLocationReadResult(
                     PlayerLocationReadStatus.Interior,
-                    Diagnostic: $"Player is inside cell 0x{cellFormId:X8}."));
+                    Diagnostic: $"Player is inside cell 0x{cellFormId:X8}.");
+
+            var worldspace = session.ReadPointer(parentCell + attachedProfile.Layout.CellWorldspaceOffset);
+            if (!IsLikelyPointer(worldspace))
+                return new PlayerLocationReadResult(PlayerLocationReadStatus.UnableToRead,
+                    Diagnostic: $"Skyrim cell 0x{cellFormId:X8} has no readable worldspace.");
+
+            var worldspaceId = session.ReadUInt32(worldspace + attachedProfile.Layout.CellFormIdOffset);
+            var isSolstheimMap = SkyrimGameIdentity.IsSolstheimMap(map);
+            // Tamriel and the five walled cities use the same map coordinates.
+            var matchesMap = isSolstheimMap
+                ? worldspaceId == 0x04000800
+                : worldspaceId is 0x3C or 0x1691D or 0x16BB4 or 0x16D71 or 0x1A26F or 0x37EDF;
+            if (!matchesMap)
+                return new PlayerLocationReadResult(PlayerLocationReadStatus.OutsideSupportedWorldspace,
+                    Diagnostic: $"Skyrim worldspace 0x{worldspaceId:X8}, cell 0x{cellFormId:X8}.");
 
             // Position remains on the already verified static XYZ source until the
             // PlayerCharacter position layout is live-verified independently.
@@ -110,21 +130,27 @@ public sealed class SkyrimWorldMapPlayerLocationProvider(
                 session.ReadSingle(addresses.Y),
                 session.ReadSingle(addresses.Z));
             if (!IsReasonable(position))
-                return Task.FromResult(new PlayerLocationReadResult(
+                return new PlayerLocationReadResult(
                     PlayerLocationReadStatus.UnableToRead,
-                    Diagnostic: "Skyrim returned invalid coordinate values."));
-            if (!attachedProfile!.Calibration.TryConvert(position, out var location))
-                return Task.FromResult(new PlayerLocationReadResult(
+                    Diagnostic: "Skyrim returned invalid coordinate values.");
+            var calibration = isSolstheimMap ? SkyrimWorldMapMemoryProfile.SolstheimCalibration : attachedProfile.Calibration;
+            if (!calibration.TryConvert(position, out var location))
+                return new PlayerLocationReadResult(
                     PlayerLocationReadStatus.UnableToRead,
-                    Diagnostic: "The player is outside the supported Skyrim world map."));
+                    Diagnostic: "The player is outside the supported Skyrim world map.");
 
-            return Task.FromResult(PlayerLocationReadResult.Success(location!));
+            if (session.ReadPointer(playerCharacterSingletonAddress) != playerCharacter ||
+                session.ReadPointer(playerCharacter + attachedProfile.Layout.PlayerParentCellOffset) != parentCell)
+                return new PlayerLocationReadResult(PlayerLocationReadStatus.UnableToRead,
+                    Diagnostic: "Skyrim player or cell changed during the read.");
+
+            return PlayerLocationReadResult.Success(location!);
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
             logger.LogDebug(ex, "The Skyrim process could not be read; it will be rediscovered on the next poll.");
             Detach();
-            return Task.FromResult(new PlayerLocationReadResult(PlayerLocationReadStatus.UnableToRead, Diagnostic: ex.Message));
+            return new PlayerLocationReadResult(PlayerLocationReadStatus.UnableToRead, Diagnostic: ex.Message);
         }
     }
 

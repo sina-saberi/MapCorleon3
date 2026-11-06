@@ -23,19 +23,20 @@ public partial class SettingsDialog : Window
     private IReadOnlyList<CategoryChoice> categories = [];
     private bool isSaving;
 
-    public SettingsDialog(Map? activeMap = null)
+    public SettingsDialog(Map? activeMap, Map? gameLaunchMap)
     {
         InitializeComponent();
         settings = App.Services.GetRequiredService<ISettingsService>();
         originalDirectory = settings.Current.DataDirectory;
         DataDirectory.Text = originalDirectory;
-        var playerLocations = App.Services.GetRequiredService<IPlayerLocationCoordinator>();
-        if (activeMap?.Config is { } config && playerLocations.GetProviderMetadata(activeMap) is { } metadata)
+        if (gameLaunchMap?.Config is { } config)
         {
-            launchMap = activeMap;
+            launchMap = gameLaunchMap;
             savedLaunchSettings = new GameLaunchSettings(config.LaunchExecutablePath, config.LaunchArguments, config.LaunchWorkingDirectory);
-            LaunchMapName.Text = activeMap.DisplayName;
-            LaunchDescription.Text = metadata.SettingsDescription;
+            LaunchMapName.Text = gameLaunchMap.DisplayName;
+            LaunchDescription.Text = gameLaunchMap == activeMap
+                ? "Other maps for this game can use this executable when they have no saved path."
+                : $"The selected map uses the launch settings saved for {gameLaunchMap.Name}.";
             LaunchExecutableBox.Text = savedLaunchSettings.ExecutablePath ?? string.Empty;
             LaunchArgumentsBox.Text = savedLaunchSettings.Arguments ?? string.Empty;
             LaunchWorkingDirectoryBox.Text = savedLaunchSettings.WorkingDirectory ?? string.Empty;
@@ -43,12 +44,14 @@ public partial class SettingsDialog : Window
         }
 
         OverlayMapName.Text = activeMap?.DisplayName ?? "No active map";
-        if (activeMap is null || !SkyrimGameIdentity.IsWorldMap(GameMapDescriptorFactory.Create(activeMap)))
+        if (activeMap is null || !SkyrimGameIdentity.IsTrackingMap(GameMapDescriptorFactory.Create(activeMap)))
         {
             OverlayOptions.Visibility = Visibility.Collapsed;
             OverlayUnavailable.Text = activeMap is null
                 ? "Open a supported map to change its game overlay settings."
-                : "The game overlay is unavailable for this map.";
+                : App.Services.GetRequiredService<IPlayerLocationCoordinator>().Supports(activeMap)
+                    ? "Desktop player tracking is available for this map. The in-game overlay supports Skyrim."
+                    : "The in-game overlay supports the Skyrim and Solstheim maps.";
             OverlayUnavailable.Visibility = Visibility.Visible;
             return;
         }

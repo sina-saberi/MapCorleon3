@@ -72,7 +72,7 @@ internal sealed class SkyrimOverlayServer(
 
     private async Task<OverlayState> HandleAsync(OverlayRequest request, CancellationToken ct)
     {
-        var scope = shell.CurrentMap is { } map && SkyrimGameIdentity.IsWorldMap(GameMapDescriptorFactory.Create(map))
+        var scope = shell.CurrentMap is { } map && SkyrimGameIdentity.IsTrackingMap(GameMapDescriptorFactory.Create(map))
             ? shell.LoadedLocationScope
             : null;
         if (currentScope != scope)

@@ -10,7 +10,8 @@ public sealed class SkyrimPlayerLocationProviderTests
     [Theory]
     [InlineData("Skyrim", "Skyrim", true)]
     [InlineData("Skyrim Special Edition", "Skyrim", true)]
-    [InlineData("Skyrim", "Solstheim", false)]
+    [InlineData("Skyrim", "Solstheim", true)]
+    [InlineData("Skyrim", "Apocrypha", false)]
     [InlineData("Fallout 4", "Commonwealth", false)]
     public void MatchesOnlySupportedSkyrimMap(string gameName, string mapName, bool expected)
     {
@@ -18,14 +19,17 @@ public sealed class SkyrimPlayerLocationProviderTests
         Assert.Equal(expected, provider.Supports(CreateDescriptor(gameName, mapName)));
     }
 
-    [Fact]
-    public async Task ReadsCoordinatesUsingProfileAddresses()
+    [Theory]
+    [InlineData(0x3Cu)]
+    [InlineData(0x1A26Fu)]
+    public async Task ReadsCoordinatesUsingProfileAddresses(uint worldspaceId)
     {
         var profile = SkyrimWorldMapMemoryProfile.AnniversaryEdition1170;
         var moduleBase = nint.CreateChecked(0x140000000L);
         var addresses = profile.GetPositionAddresses(moduleBase);
         var player = nint.CreateChecked(0x200000000L);
         var cell = nint.CreateChecked(0x210000000L);
+        var worldspace = nint.CreateChecked(0x220000000L);
         var detector = new FakeDetector
         {
             Process = new GameProcessInfo(42, moduleBase, @"C:\Games\SkyrimSE.exe", "1.6.1170.0")
@@ -38,13 +42,15 @@ public sealed class SkyrimPlayerLocationProviderTests
         }, new Dictionary<nint, nint>
         {
             [profile.GetPlayerCharacterSingletonAddress(moduleBase)] = player,
-            [player + profile.Layout.PlayerParentCellOffset] = cell
+            [player + profile.Layout.PlayerParentCellOffset] = cell,
+            [cell + profile.Layout.CellWorldspaceOffset] = worldspace
         }, new Dictionary<nint, ushort>
         {
             [cell + profile.Layout.CellFlagsOffset] = 0
         }, new Dictionary<nint, uint>
         {
-            [cell + profile.Layout.CellFormIdOffset] = 0x0000003C
+            [cell + profile.Layout.CellFormIdOffset] = 0x0000003C,
+            [worldspace + profile.Layout.CellFormIdOffset] = worldspaceId
         });
         var provider = CreateProvider(detector, memory);
 
@@ -124,6 +130,7 @@ public sealed class SkyrimPlayerLocationProviderTests
         var firstCell = nint.CreateChecked(0x210000000L);
         var secondPlayer = nint.CreateChecked(0x220000000L);
         var secondCell = nint.CreateChecked(0x230000000L);
+        var worldspace = nint.CreateChecked(0x240000000L);
         var detector = new FakeDetector
         {
             Process = new GameProcessInfo(42, firstBase, @"C:\Games\SkyrimSE.exe", "1.6.1170.0")
@@ -137,7 +144,9 @@ public sealed class SkyrimPlayerLocationProviderTests
             [profile.GetPlayerCharacterSingletonAddress(firstBase)] = firstPlayer,
             [firstPlayer + profile.Layout.PlayerParentCellOffset] = firstCell,
             [profile.GetPlayerCharacterSingletonAddress(secondBase)] = secondPlayer,
-            [secondPlayer + profile.Layout.PlayerParentCellOffset] = secondCell
+            [secondPlayer + profile.Layout.PlayerParentCellOffset] = secondCell,
+            [firstCell + profile.Layout.CellWorldspaceOffset] = worldspace,
+            [secondCell + profile.Layout.CellWorldspaceOffset] = worldspace
         }, new Dictionary<nint, ushort>
         {
             [firstCell + profile.Layout.CellFlagsOffset] = 0,
@@ -145,7 +154,8 @@ public sealed class SkyrimPlayerLocationProviderTests
         }, new Dictionary<nint, uint>
         {
             [firstCell + profile.Layout.CellFormIdOffset] = 0x3C,
-            [secondCell + profile.Layout.CellFormIdOffset] = 0x3C
+            [secondCell + profile.Layout.CellFormIdOffset] = 0x3C,
+            [worldspace + profile.Layout.CellFormIdOffset] = 0x3C
         });
         var provider = CreateProvider(detector, memory);
 
@@ -157,6 +167,43 @@ public sealed class SkyrimPlayerLocationProviderTests
 
         Assert.Equal([42, 42], memory.OpenedProcessIds);
         Assert.Equal(1, memory.DisposedSessionCount);
+    }
+
+    [Fact]
+    public async Task ProjectsSolstheimAndRejectsItForTamriel()
+    {
+        var profile = SkyrimWorldMapMemoryProfile.AnniversaryEdition1170;
+        var module = nint.CreateChecked(0x140000000L);
+        var player = nint.CreateChecked(0x200000000L);
+        var cell = nint.CreateChecked(0x210000000L);
+        var worldspace = nint.CreateChecked(0x220000000L);
+        var addresses = profile.GetPositionAddresses(module);
+        var detector = new FakeDetector { Process = new(42, module, "SkyrimSE.exe", "1.6.1170.0") };
+        var memory = new FakeMemoryReader(
+            new() { [addresses.X] = 40330.77734375f, [addresses.Y] = 82291.4375f, [addresses.Z] = 12304.5302734375f },
+            new()
+            {
+                [profile.GetPlayerCharacterSingletonAddress(module)] = player,
+                [player + profile.Layout.PlayerParentCellOffset] = cell,
+                [cell + profile.Layout.CellWorldspaceOffset] = worldspace
+            },
+            new() { [cell + profile.Layout.CellFlagsOffset] = 0 },
+            new()
+            {
+                [cell + profile.Layout.CellFormIdOffset] = 0x04001234,
+                [worldspace + profile.Layout.CellFormIdOffset] = 0x04000800
+            });
+        var provider = CreateProvider(detector, memory);
+
+        var wrongMap = await provider.ReadAsync(CreateDescriptor("Skyrim", "Skyrim"), default);
+        Assert.Equal(PlayerLocationReadStatus.OutsideSupportedWorldspace, wrongMap.Status);
+        Assert.Empty(memory.ReadAddresses);
+
+        var result = await provider.ReadAsync(CreateDescriptor("Skyrim", "Solstheim"), default);
+        Assert.Equal(PlayerLocationReadStatus.Success, result.Status);
+        var location = Assert.IsType<PlayerLocation>(result.Location);
+        Assert.InRange(location.Longitude, -1.287, -1.285);
+        Assert.InRange(location.Latitude, 1.345, 1.347);
     }
 
     private static SkyrimWorldMapPlayerLocationProvider CreateProvider(IGameProcessDetector detector, IProcessMemoryReader memory) =>

@@ -15,6 +15,11 @@ public static class SkyrimGameIdentity
     public static bool IsWorldMap(GameMapDescriptor map) =>
         IsSkyrim(map) && Normalize(map.MapName) == "skyrim";
 
+    public static bool IsSolstheimMap(GameMapDescriptor map) =>
+        IsSkyrim(map) && Normalize(map.MapName) == "solstheim";
+
+    public static bool IsTrackingMap(GameMapDescriptor map) => IsWorldMap(map) || IsSolstheimMap(map);
+
     private static string Normalize(string? value) => new((value ?? string.Empty)
         .Where(char.IsLetterOrDigit)
         .Select(char.ToLowerInvariant)

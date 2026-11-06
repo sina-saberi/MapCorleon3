@@ -146,7 +146,19 @@ public sealed class ShellViewModel : ViewModelBase
     public PlayerTrackingState TrackingState => playerLocationCoordinator.State;
     public string PlayerTrackingStatusText => playerLocationCoordinator.StatusText;
     public bool IsPlayerTrackingSupported => CurrentMap is not null && playerLocationCoordinator.Supports(CurrentMap);
-    public bool CanLaunchGame => IsPlayerTrackingSupported && CurrentGameLauncher is not null;
+    public bool CanLaunchGame => CurrentGameLauncher is not null;
+
+    internal Map? GameLaunchSettingsMap
+    {
+        get
+        {
+            if (CurrentMap is not { } map || CurrentGameLauncher is null) return null;
+            if (!string.IsNullOrWhiteSpace(map.Config?.LaunchExecutablePath)) return map;
+
+            return Maps.FirstOrDefault(candidate => candidate.GameId == map.GameId &&
+                !string.IsNullOrWhiteSpace(candidate.Config?.LaunchExecutablePath)) ?? map;
+        }
+    }
 
     internal IReadOnlyList<Location> LoadedLocations => allLocations;
     internal (int MapId, int TimelineId)? LoadedLocationScope =>
@@ -448,7 +460,7 @@ public sealed class ShellViewModel : ViewModelBase
     {
         var launcher = CurrentGameLauncher;
         if (launcher is null) return;
-        var config = CurrentMapConfig;
+        var config = GameLaunchSettingsMap?.Config;
         var launchSettings = config is null
             ? null
             : new GameLaunchSettings(config.LaunchExecutablePath, config.LaunchArguments, config.LaunchWorkingDirectory);

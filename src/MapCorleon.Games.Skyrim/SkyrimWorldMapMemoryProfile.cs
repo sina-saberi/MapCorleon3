@@ -7,7 +7,8 @@ public readonly record struct ProcessMemoryAddresses(nint X, nint Y, nint Z);
 public sealed record SkyrimWorldMapMemoryLayout(
     nint PlayerParentCellOffset,
     nint CellFormIdOffset,
-    nint CellFlagsOffset);
+    nint CellFlagsOffset,
+    nint CellWorldspaceOffset);
 
 public sealed record SkyrimWorldMapCalibration(
     float MinimumGameX,
@@ -60,7 +61,8 @@ public sealed record SkyrimWorldMapMemoryProfile(
         new SkyrimWorldMapMemoryLayout(
             PlayerParentCellOffset: 0x60,
             CellFormIdOffset: 0x14,
-            CellFlagsOffset: 0x40),
+            CellFlagsOffset: 0x40,
+            CellWorldspaceOffset: 0x128),
         new SkyrimWorldMapCalibration(
             -57 * 4096,
             63 * 4096,
@@ -72,6 +74,16 @@ public sealed record SkyrimWorldMapMemoryProfile(
             LatitudeFromX: 3.5170256592816117e-09,
             LatitudeFromY: 1.3449893590886038e-06,
             LatitudeOffset: 1.1259911832689498));
+
+    // MapGenie Solstheim (map 18), fitted from Dragonborn.esm exterior markers.
+    public static SkyrimWorldMapCalibration SolstheimCalibration { get; } = new(
+        -1_000_000, 1_000_000, -1_000_000, 1_000_000,
+        LongitudeFromX: 1.3398508635383147e-06,
+        LongitudeFromY: 1.5984830683546392e-09,
+        LongitudeOffset: -1.3402011667439906,
+        LatitudeFromX: 4.1088921697685075e-10,
+        LatitudeFromY: 1.3414745142952379e-06,
+        LatitudeOffset: 1.2357093726382187);
 
     public bool SupportsVersion(string value) =>
         value.Equals(Version, StringComparison.OrdinalIgnoreCase) ||
