@@ -12,23 +12,20 @@
       <Setter Property="Padding" Value="12"/><Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
   </UserControl.Resources>
-  <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
-    <Grid>
-      <TextBlock Text="Select a marker to view its details" Foreground="{StaticResource MutedTextBrush}"
-                 TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center"
-                 VerticalAlignment="Center" Margin="40">
-        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
-          <Style.Triggers><DataTrigger Binding="{Binding SelectedLocation}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
-        </Style></TextBlock.Style>
-      </TextBlock>
-
+  <UserControl.Style>
+    <Style TargetType="UserControl">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding SelectedLocation,FallbackValue={x:Null}}" Value="{x:Null}">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+  </UserControl.Style>
+  <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
       <Grid DataContext="{Binding SelectedLocation}">
-        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Visible"/>
-          <Style.Triggers><DataTrigger Binding="{Binding}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
-        </Style></Grid.Style>
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#172131" BorderBrush="#303C4E" BorderThickness="0,0,0,1" Padding="12,5">
+        <Border Grid.Row="0" Background="#172131" BorderBrush="#303C4E" BorderThickness="0,0,0,1" CornerRadius="7,7,0,0" Padding="12,5">
           <DockPanel>
             <Button DockPanel.Dock="Right" Style="{StaticResource IconAction}" ToolTip="Close location details"
                     AutomationProperties.Name="Close location details" Click="Close_Click">
@@ -127,6 +124,5 @@
           </StackPanel>
         </ScrollViewer>
       </Grid>
-    </Grid>
   </Border>
 </UserControl>
