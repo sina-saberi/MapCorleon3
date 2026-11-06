@@ -11,11 +11,6 @@
       <Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="7"/>
       <Setter Property="Padding" Value="12"/><Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
-    <Style x:Key="CoordinateCard" TargetType="Border">
-      <Setter Property="Background" Value="#151C27"/><Setter Property="BorderBrush" Value="#303C4E"/>
-      <Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="5"/>
-      <Setter Property="Padding" Value="10,8"/>
-    </Style>
   </UserControl.Resources>
   <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
     <Grid>
@@ -118,20 +113,6 @@
               </StackPanel>
             </Border>
 
-            <Border Style="{StaticResource Card}">
-              <StackPanel><TextBlock Text="COORDINATES" Style="{StaticResource SectionLabel}"/>
-                <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="10"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                  <Border Style="{StaticResource CoordinateCard}"><StackPanel>
-                    <TextBlock Text="LATITUDE" FontSize="10" FontWeight="SemiBold" Foreground="#7F91A8"/>
-                    <TextBlock Text="{Binding Latitude,StringFormat={}{0:F5}}" Margin="0,5,0,0" FontFamily="Consolas" FontSize="14"/>
-                  </StackPanel></Border>
-                  <Border Grid.Column="2" Style="{StaticResource CoordinateCard}"><StackPanel>
-                    <TextBlock Text="LONGITUDE" FontSize="10" FontWeight="SemiBold" Foreground="#7F91A8"/>
-                    <TextBlock Text="{Binding Longitude,StringFormat={}{0:F5}}" Margin="0,5,0,0" FontFamily="Consolas" FontSize="14"/>
-                  </StackPanel></Border>
-                </Grid>
-              </StackPanel>
-            </Border>
           </StackPanel>
         </ScrollViewer>
       </Grid>
