@@ -17,6 +17,7 @@
             Background="#CC171D28" CornerRadius="4" IsHitTestVisible="False">
       <TextBlock x:Name="StatusText" Text="Loading map…" Foreground="#D9E4F2"/>
     </Border>
+
     <Button x:Name="FollowPlayerButton" HorizontalAlignment="Right" VerticalAlignment="Bottom"
             Margin="16" Padding="14,9" Click="FollowPlayer_Click" IsEnabled="False"
             ToolTip="Toggle player follow. After moving the map, follow resumes after 15 seconds.">
