@@ -55,7 +55,6 @@ public partial class App : Application
         services.AddSingleton<IMapSettingsService, MapSettingsService>();
         services.AddSingleton<IMediaDownloadService, MediaDownloadService>();
         services.AddSingleton<EfMapImportSink>();
-        services.AddSingleton<IMapImportSink>(provider => provider.GetRequiredService<EfMapImportSink>());
         services.AddSingleton<BundledMapCatalog>();
         services.AddSingleton<IMapProvider, MapGenieProvider>();
         services.AddSingleton<IMapProvider, Kcd2MonasteryMapProvider>();

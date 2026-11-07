@@ -28,7 +28,7 @@ Uploads are SHA-256 hashed while streaming. User-added media uses `storage/blobs
 
 ## Catalog and download providers
 
-The developer-only exporter under `tools/MapCorleon.CatalogExport` reads the rendered MapGenie map page with Chrome or Edge and produces a portable `CatalogMap` JSON document. The published desktop app reads those documents from the `Catalog` folder. The MapGenie provider in the desktop app fetches tiles and the local KCD2 provider can still read Sedletz from an installed game archive.
+The developer-only exporter under `tools/MapCorleon.CatalogExport` reads the rendered MapGenie map page with Chrome or Edge and produces a portable `CatalogMap` JSON document. The published desktop app reads those documents from the `Catalog` folder. The MapGenie provider in the desktop app fetches tiles and the local KCD2 provider reads tiles for previously imported Sedletz maps.
 
 Catalog maps apply in a SQLite transaction. The provider map ID resolves the existing map, and stable provider location IDs preserve local progress even if a location changes category. An installed revision is recorded with the update and the same revision is skipped on subsequent launches. Omitted locations, custom locations, timelines, pins, marks, and launch settings are retained.
 

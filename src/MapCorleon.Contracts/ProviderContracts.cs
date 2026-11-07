@@ -1,14 +1,7 @@
 namespace MapCorleon.Contracts;
 
-public sealed record MapImportRequest(string Provider, string PageUrl, bool DownloadMedia, bool DownloadTiles);
 public sealed record CatalogMap(string Game, int Revision, ImportedMap Map, string? GameImage = null,
     string? MapImage = null, string? IconFont = null, string? SourcePageUrl = null);
-public sealed record ImportProgress(string Stage, int Completed, int Total)
-{
-    public int Percentage => Total == 0 ? 0 : (int)Math.Round(Completed * 100d / Total);
-}
-public sealed record ImportResult(int Groups, int Categories, int Locations, int Media, string MapName, long MapExternalId);
-
 public sealed record ImportedMap(
     string Provider, long ExternalId, string Name, double StartLatitude, double StartLongitude, double InitialZoom,
     string? TilePattern, int? MinZoom, int? MaxZoom, IReadOnlyDictionary<int, TileRange>? TileBounds, string? SpriteImageLocation,
@@ -31,16 +24,10 @@ public interface IProviderStorage
 }
 public sealed record StoredAsset(string FullPath, string ContentHash);
 
-public interface IMapImportSink
-{
-    Task<ImportResult> UpsertAsync(string gameName, ImportedMap map, IProgress<ImportProgress>? progress, CancellationToken ct);
-}
 public interface IMapProvider
 {
     string Key { get; }
     string DisplayName { get; }
-    bool UsesLocalFile => false;
-    Task<ImportResult> ImportAsync(MapImportRequest request, IProgress<ImportProgress>? progress = null, CancellationToken ct = default);
     Task<byte[]?> DownloadTileAsync(string url, CancellationToken ct = default);
 }
 public interface IMapProviderResolver

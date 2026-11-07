@@ -5,7 +5,7 @@ The KCD2 preview targets Steam build `23914554`, executable `1.5.6.0`. It tracks
 ## Setup
 
 1. For Trosky or Kuttenberg, select the existing imported map. In **Settings → Game launch**, choose the installed `KingdomCome.exe` if you want to launch from MapCorleon.
-2. For Sedletz, choose **Import map → KCD2 Sedletz Monastery (installed game)** and browse to `Data\IPL_GameData.pak`. MapCorleon reads the game's installed map art and level markers, then writes a small set of local map tiles to its data directory.
+2. Sedletz is available if it was already imported by an earlier version.
 3. Keep MapCorleon running and focus the game in borderless or windowed mode. Nearby cards expire automatically. **F7** opens the clickable panel. **F8** toggles desktop Follow Player. **Settings → Game overlay** controls the keys, radius in meters, alert duration, and categories.
 
 ## Position source and verification

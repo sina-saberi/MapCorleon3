@@ -28,7 +28,7 @@ On Windows, install the .NET 8 SDK or use Visual Studio with the .NET desktop de
 dotnet run --project src/MapCorleon/MapCorleon.csproj
 ```
 
-1. Open **Games and Maps** in the sidebar and choose a game, then a map. Sedletz can be added from your installed KCD2 game archive.
+1. Open **Games and Maps** in the sidebar and choose a game, then a map.
 2. Open **Timelines** to choose or manage a playthrough. Use **Download Manager** to download tiles and location photos for a selected map.
 3. For live tracking, open **Settings → Game launch**, set your game executable, and select the map that matches your current region.
 
@@ -60,3 +60,5 @@ dotnet run --project tools/MapCorleon.CatalogExport -- https://mapgenie.io/witch
 The image arguments are optional. Pass `-` to keep existing art. Pass the icon stylesheet URL after the image arguments if automatic detection misses it. Use `--list <map URL>` to see links on the rendered page. Review the JSON and assets before committing them.
 
 New maps use revision 1. Increase the revision of a map to apply its new data to existing databases on startup. Catalog updates retain local progress. The package contains game covers, map previews, and category artwork. Players can download basemap tiles and location photos separately in the app.
+
+Place a separate wide `banner.jpg` beside the game's cover to add header artwork. The starter banners use selected screenshots and artwork from the games' Steam listings.

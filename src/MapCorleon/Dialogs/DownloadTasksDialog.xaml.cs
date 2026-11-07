@@ -15,6 +15,14 @@ public partial class DownloadTasksDialog : Window
     private bool refreshScheduled;
     private Map? selectedMap;
 
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+        if (e.Key != System.Windows.Input.Key.Escape) return;
+        e.Handled = true;
+        Close();
+    }
+
     public DownloadTasksDialog()
     {
         InitializeComponent();

@@ -8,9 +8,6 @@ public sealed class MapGenieProvider(HttpClient http) : IMapProvider
     public string Key => "mapgenie";
     public string DisplayName => "MapGenie";
 
-    public Task<ImportResult> ImportAsync(MapImportRequest request, IProgress<ImportProgress>? progress = null, CancellationToken ct = default) =>
-        throw new NotSupportedException("MapGenie maps are installed from the bundled catalog.");
-
     public async Task<byte[]?> DownloadTileAsync(string url, CancellationToken ct = default)
     {
         using var request = CreateRequest(url, "image/avif,image/webp,image/apng,image/*,*/*;q=0.8", "image");

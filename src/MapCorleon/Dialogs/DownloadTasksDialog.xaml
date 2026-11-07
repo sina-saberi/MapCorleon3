@@ -24,7 +24,6 @@
       <TextBlock x:Name="AddStatus" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
                  Margin="0,7,0,0" Visibility="Collapsed"/>
     </StackPanel>
-    <Button DockPanel.Dock="Bottom" Content="Close" IsCancel="True" HorizontalAlignment="Right" Margin="3,12,3,3"/>
     <ListBox x:Name="TaskList" BorderThickness="0" Padding="0">
       <ListBox.ItemContainerStyle>
         <Style TargetType="ListBoxItem">

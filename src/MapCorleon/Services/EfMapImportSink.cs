@@ -12,25 +12,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MapCorleon.Services;
 
-public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : IMapImportSink
+public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory)
 {
-    public Task<ImportResult> UpsertAsync(string gameName, ImportedMap source, IProgress<ImportProgress>? progress, CancellationToken ct) =>
-        UpsertAsync(gameName, source, progress, ct, null);
-
-    public Task<ImportResult> UpsertCatalogAsync(CatalogMap entry, CancellationToken ct) =>
-        UpsertAsync(entry.Game, entry.Map, null, ct, entry);
-
-    private async Task<ImportResult> UpsertAsync(string gameName, ImportedMap source, IProgress<ImportProgress>? progress,
-        CancellationToken ct, CatalogMap? entry)
+    public async Task UpsertCatalogAsync(CatalogMap entry, CancellationToken ct)
     {
+        var gameName = entry.Game;
+        var source = entry.Map;
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
-        progress?.Report(new("Loading existing records", 0, source.Locations.Count));
 
         var maps = db.Maps.Include(x => x.Game).Include(x => x.Config).Include(x => x.Timelines);
         var map = await maps.SingleOrDefaultAsync(x => x.ExternalId == source.ExternalId && x.Config!.Provider == source.Provider, ct);
-        if (entry is not null && map?.Config is { } existing && existing.CatalogRevision >= entry.Revision)
-            return new(0, 0, 0, 0, map.Name, source.ExternalId);
+        if (map?.Config is { } existing && existing.CatalogRevision >= entry.Revision)
+            return;
 
         if (map is null)
         {
@@ -50,14 +44,11 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
         map.Config.MinZoom = source.MinZoom; map.Config.MaxZoom = source.MaxZoom;
         map.Config.TileBoundsJson = source.TileBounds is null ? null : JsonSerializer.Serialize(source.TileBounds);
         map.Config.SpriteImagePath = source.SpriteImageLocation ?? map.Config.SpriteImagePath;
-        if (entry is not null)
-        {
-            map.Game!.CatalogName = gameName;
-            map.Config.CatalogRevision = entry.Revision;
-            map.Config.SourcePageUrl = entry.SourcePageUrl;
-            map.Config.GameImage = entry.GameImage;
-            map.Config.MapImage = entry.MapImage;
-        }
+        map.Game!.CatalogName = gameName;
+        map.Config.CatalogRevision = entry.Revision;
+        map.Config.SourcePageUrl = entry.SourcePageUrl;
+        map.Config.GameImage = entry.GameImage;
+        map.Config.MapImage = entry.MapImage;
         map.Config.MinLatitude = source.Locations.Count == 0 ? source.StartLatitude : source.Locations.Min(x => x.Latitude);
         map.Config.MaxLatitude = source.Locations.Count == 0 ? source.StartLatitude : source.Locations.Max(x => x.Latitude);
         map.Config.MinLongitude = source.Locations.Count == 0 ? source.StartLongitude : source.Locations.Min(x => x.Longitude);
@@ -96,13 +87,10 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
                     category.IconX = sprite.X; category.IconY = sprite.Y;
                     category.IconWidth = sprite.Width; category.IconHeight = sprite.Height; category.IconPixelRatio = sprite.PixelRatio;
                 }
-                if (entry is not null)
-                {
-                    category.IconLayersJson = importedCategory.IconLayers is { Count: > 0 } layers
-                        ? JsonSerializer.Serialize(layers) : null;
-                    category.IconFont = entry.IconFont;
-                    category.IconAtlas = entry.Map.SpriteImageLocation;
-                }
+                category.IconLayersJson = importedCategory.IconLayers is { Count: > 0 } layers
+                    ? JsonSerializer.Serialize(layers) : null;
+                category.IconFont = entry.IconFont;
+                category.IconAtlas = source.SpriteImageLocation;
                 if (category.Id == 0) { category.IsVisible = importedCategory.IsVisible; db.Categories.Add(category); }
                 categories[importedCategory.ExternalId] = category;
             }
@@ -113,7 +101,6 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
         var existingById = existingLocations.Where(x => x.ExternalId.HasValue).ToLookup(x => x.ExternalId!.Value);
         var legacyByCategory = existingLocations.Where(x => x.ExternalId is null).ToLookup(x => x.CategoryId);
         var importedLocations = new Dictionary<long, Location>();
-        var mediaCount = 0; var completed = 0;
         foreach (var imported in source.Locations)
         {
             ct.ThrowIfCancellationRequested();
@@ -142,13 +129,6 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
                     media.RelativePath = importedMedia.Source;
                     media.ContentHash = Hash(importedMedia.Source);
                 }
-                mediaCount++;
-            }
-            completed++;
-            if (progress is not null && completed % 100 == 0)
-            {
-                await db.SaveChangesAsync(ct);
-                progress.Report(new("Saving locations", completed, source.Locations.Count));
             }
         }
         await db.SaveChangesAsync(ct);
@@ -161,8 +141,6 @@ public sealed class EfMapImportSink(IDbContextFactory<AppDbContext> factory) : I
             location.DescriptionMarkdown = RewriteLocationLinks(location.DescriptionMarkdown, localIds);
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
-        progress?.Report(new("Import complete", source.Locations.Count, source.Locations.Count));
-        return new(source.Groups.Count, categories.Count, source.Locations.Count, mediaCount, source.Name, source.ExternalId);
     }
 
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));

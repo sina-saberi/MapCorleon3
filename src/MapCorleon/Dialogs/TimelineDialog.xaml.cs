@@ -14,6 +14,14 @@ public partial class TimelineDialog : Window
     private Dictionary<int, int> percentages = [];
     private bool busy;
 
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+        if (e.Key != System.Windows.Input.Key.Escape || busy) return;
+        e.Handled = true;
+        Close();
+    }
+
     public TimelineDialog(ShellViewModel shell)
     {
         InitializeComponent();
@@ -106,8 +114,5 @@ public partial class TimelineDialog : Window
         if (busy) e.Cancel = true;
     }
 
-    private sealed record TimelineCard(Timeline Timeline, bool IsActive, bool CanDelete, int Percentage)
-    {
-        public string Label => IsActive ? $"{Timeline.Name} · Active" : Timeline.Name;
-    }
+    private sealed record TimelineCard(Timeline Timeline, bool IsActive, bool CanDelete, int Percentage);
 }

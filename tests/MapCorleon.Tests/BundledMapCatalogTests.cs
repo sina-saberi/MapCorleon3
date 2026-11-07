@@ -22,6 +22,7 @@ public sealed class BundledMapCatalogTests
             Assert.NotNull(BundledMapCatalog.Asset(entry.GameImage));
             Assert.NotNull(BundledMapCatalog.Asset(entry.MapImage));
             Assert.NotNull(BundledMapCatalog.Asset(entry.IconFont ?? entry.Map.SpriteImageLocation));
+            Assert.NotNull(new Map { Name = entry.Map.Name, Config = new MapConfig { GameImage = entry.GameImage } }.GameBanner);
         }
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
