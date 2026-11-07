@@ -24,6 +24,9 @@ public sealed class Category : IEntity, INotifyPropertyChanged
         }
     }
     public string? IconKey { get; set; }
+    public string? IconLayersJson { get; set; }
+    public string? IconFont { get; set; }
+    public string? IconAtlas { get; set; }
     public int? IconX { get; set; }
     public int? IconY { get; set; }
     public int? IconWidth { get; set; }

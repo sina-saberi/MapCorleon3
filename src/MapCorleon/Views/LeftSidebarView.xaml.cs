@@ -19,7 +19,16 @@ public partial class LeftSidebarView : UserControl
         new SettingsDialog(shell?.CurrentMap, shell?.GameLaunchSettingsMap) { Owner = Owner }.ShowDialog();
     }
 
-    private void Import_Click(object sender, RoutedEventArgs e) => new ImportDialog { Owner = Owner }.ShowDialog();
+    private async void Maps_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ShellViewModel shell) return;
+        var picker = new MapPickerDialog(shell.Maps, shell.CurrentMap?.Id) { Owner = Owner };
+        if (picker.ShowDialog() != true) return;
+        if (picker.ImportedMapName is { } name)
+            await shell.LoadAsync(preferredMapName: name);
+        else if (picker.SelectedMap is { } map && map.Id != shell.CurrentMap?.Id)
+            await shell.LoadAsync(preferredMapId: map.Id);
+    }
 
     private void Downloads_Click(object sender, RoutedEventArgs e) => new DownloadTasksDialog { Owner = Owner }.ShowDialog();
 

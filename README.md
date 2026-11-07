@@ -1,6 +1,6 @@
 # MapCorleon
 
-MapCorleon is a Windows interactive game map, collectible tracker, and companion overlay for **Skyrim Special Edition**, **Fallout 4**, and **Kingdom Come: Deliverance II**. Import MapGenie maps, track discoveries across playthroughs, and see nearby uncollected locations while you play.
+MapCorleon is a Windows interactive game map and collectible tracker with bundled maps for 12 games. The companion overlay supports **Skyrim Special Edition**, **Fallout 4**, and **Kingdom Come: Deliverance II**.
 
 ## Features
 
@@ -28,8 +28,8 @@ On Windows, install the .NET 8 SDK or use Visual Studio with the .NET desktop de
 dotnet run --project src/MapCorleon/MapCorleon.csproj
 ```
 
-1. Use **Import map** in the sidebar and paste a MapGenie map URL. The KCD2 Sedletz option imports from the installed game.
-2. Choose a map and timeline to track your progress.
+1. Open **Games and Maps** in the sidebar and choose a game, then a map. Sedletz can be added from your installed KCD2 game archive.
+2. Open **Timelines** to choose or manage a playthrough. Use **Download Manager** to download tiles and location photos for a selected map.
 3. For live tracking, open **Settings → Game launch**, set your game executable, and select the map that matches your current region.
 
 Closing the window leaves MapCorleon in the system tray. Open MapCorleon again to return to it, or choose **Exit** from the tray menu to stop it.
@@ -47,4 +47,16 @@ dotnet publish src/MapCorleon/MapCorleon.csproj `
   -o artifacts/MapCorleon-win-x64
 ```
 
-The output contains `MapCorleon.exe`. Keep the same executable path when replacing a build you have pinned. See the [architecture guide](docs/ARCHITECTURE.md) for the project layout.
+The output contains `MapCorleon.exe` and its `Catalog` directory. Extract both to the same folder before running or pinning the executable. See the [architecture guide](docs/ARCHITECTURE.md) for the project layout.
+
+## Export or update a bundled map
+
+Developers use Chrome or Edge and the catalog exporter to read a MapGenie page.
+
+```powershell
+dotnet run --project tools/MapCorleon.CatalogExport -- https://mapgenie.io/witcher-3/maps/white-orchard src/MapCorleon/Catalog 1 game-cover.jpg map-preview.jpg
+```
+
+The image arguments are optional. Pass `-` to keep existing art. Pass the icon stylesheet URL after the image arguments if automatic detection misses it. Use `--list <map URL>` to see links on the rendered page. Review the JSON and assets before committing them.
+
+New maps use revision 1. Increase the revision of a map to apply its new data to existing databases on startup. Catalog updates retain local progress. The package contains game covers, map previews, and category artwork. Players can download basemap tiles and location photos separately in the app.

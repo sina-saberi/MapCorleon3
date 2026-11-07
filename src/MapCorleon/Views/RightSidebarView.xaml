@@ -121,7 +121,10 @@
             <TextBlock Text="{Binding Category.Group.Name}" Style="{StaticResource SectionLabel}"/>
             <TextBlock Text="{Binding Title}" FontSize="25" FontWeight="SemiBold" LineHeight="30" TextWrapping="Wrap"/>
             <Border Background="#253248" CornerRadius="10" HorizontalAlignment="Left" Padding="9,4" Margin="0,10,0,16">
-              <TextBlock Text="{Binding Category.Name}" Foreground="#9FC5FF" FontSize="12"/>
+              <StackPanel Orientation="Horizontal">
+                <Image Style="{StaticResource CategoryIconImage}" Source="{Binding Category,Converter={StaticResource CategoryIcon}}"/>
+                <TextBlock Text="{Binding Category.Name}" Foreground="#9FC5FF" FontSize="12"/>
+              </StackPanel>
             </Border>
 
             <Border Style="{StaticResource Card}" Visibility="{Binding HasDescription,Converter={StaticResource BoolToVisibility}}">

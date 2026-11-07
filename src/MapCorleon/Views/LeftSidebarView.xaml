@@ -99,17 +99,17 @@
                             ToolTip="Launch game" AutomationProperties.Name="Launch game">
                         <Path Style="{StaticResource OutlineActionIcon}" Data="M7,4 L20,12 7,20 Z"/>
                     </Button>
-                    <Button Click="Timeline_Click" Style="{StaticResource IconAction}"
-                            ToolTip="Maps and timelines" AutomationProperties.Name="Maps and timelines">
+                    <Button Click="Maps_Click" Style="{StaticResource IconAction}"
+                            ToolTip="Games and Maps" AutomationProperties.Name="Games and Maps">
                         <Path Style="{StaticResource OutlineActionIcon}" Data="M3,6 L9,3 15,6 21,3 V18 L15,21 9,18 3,21 Z M9,3 V18 M15,6 V21"/>
                     </Button>
                     <Button Click="Downloads_Click" Style="{StaticResource IconAction}"
-                            ToolTip="Downloads" AutomationProperties.Name="Downloads">
+                            ToolTip="Download Manager" AutomationProperties.Name="Download Manager">
                         <Path Style="{StaticResource OutlineActionIcon}" Data="M12,3 V14 M8,10 L12,14 16,10 M4,15 V20 H20 V15"/>
                     </Button>
-                    <Button Click="Import_Click" Style="{StaticResource IconAction}"
-                            ToolTip="Import map" AutomationProperties.Name="Import map">
-                        <Path Style="{StaticResource OutlineActionIcon}" Data="M8,4 H19 V20 H8 V16 M8,8 V4 M3,12 H15 M12,9 L15,12 12,15"/>
+                    <Button Click="Timeline_Click" Style="{StaticResource IconAction}"
+                            ToolTip="Timelines" AutomationProperties.Name="Timelines">
+                        <Path Style="{StaticResource OutlineActionIcon}" Data="M4,6 H20 M4,12 H17 M4,18 H14 M18,15 L20,17 23,13"/>
                     </Button>
                     <Button x:Name="CustomButton" Click="Custom_Click" Background="#254977" Foreground="#E0EDFF" Style="{StaticResource IconAction}"
                             ToolTip="Add pin" AutomationProperties.Name="Add pin">
@@ -213,7 +213,10 @@
                                                         <CheckBox Padding="0,5" IsChecked="{Binding IsVisible,Mode=TwoWay}"
                                                                   Command="{Binding DataContext.ToggleCategoryCommand,RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                   CommandParameter="{Binding}">
-                                                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                                            <DockPanel>
+                                                                <Image Style="{StaticResource CategoryIconImage}" Source="{Binding Converter={StaticResource CategoryIcon}}"/>
+                                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                                            </DockPanel>
                                                         </CheckBox>
                                                         <TextBlock Grid.Column="1" Margin="6,0,0,0" Text="{Binding ProgressText}"
                                                                    Foreground="#8EA6C2" FontSize="11" VerticalAlignment="Center"
@@ -244,7 +247,10 @@
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel>
                                                     <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Foreground="{StaticResource MutedTextBrush}" Text="{Binding Category.Name}" FontSize="11" Margin="0,3,0,0"/>
+                                                    <DockPanel Margin="0,3,0,0">
+                                                        <Image Style="{StaticResource CategoryIconImage}" Source="{Binding Category,Converter={StaticResource CategoryIcon}}"/>
+                                                        <TextBlock Foreground="{StaticResource MutedTextBrush}" Text="{Binding Category.Name}" FontSize="11"/>
+                                                    </DockPanel>
                                                 </StackPanel>
                                                 <TextBlock Grid.Column="1" Text="›" Foreground="#7EAEED" FontSize="18" VerticalAlignment="Center"/>
                                             </Grid>

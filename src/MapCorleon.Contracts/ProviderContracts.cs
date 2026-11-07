@@ -1,6 +1,8 @@
 namespace MapCorleon.Contracts;
 
 public sealed record MapImportRequest(string Provider, string PageUrl, bool DownloadMedia, bool DownloadTiles);
+public sealed record CatalogMap(string Game, int Revision, ImportedMap Map, string? GameImage = null,
+    string? MapImage = null, string? IconFont = null, string? SourcePageUrl = null);
 public sealed record ImportProgress(string Stage, int Completed, int Total)
 {
     public int Percentage => Total == 0 ? 0 : (int)Math.Round(Completed * 100d / Total);
@@ -13,7 +15,11 @@ public sealed record ImportedMap(
     IReadOnlyList<ImportedGroup> Groups, IReadOnlyList<ImportedLocation> Locations);
 public sealed record TileRange(int MinX, int MaxX, int MinY, int MaxY);
 public sealed record ImportedGroup(long ExternalId, string Name, bool IsVisible, IReadOnlyList<ImportedCategory> Categories);
-public sealed record ImportedCategory(long ExternalId, long GroupExternalId, string Name, bool IsVisible, string? IconKey, SpriteRect? Sprite);
+public sealed record ImportedCategory(long ExternalId, long GroupExternalId, string Name, bool IsVisible, string? IconKey, SpriteRect? Sprite)
+{
+    public IReadOnlyList<ImportedIconLayer>? IconLayers { get; init; }
+}
+public sealed record ImportedIconLayer(int CodePoint, string? Color = null);
 public sealed record SpriteRect(int Width, int Height, int X, int Y, double PixelRatio);
 public sealed record ImportedLocation(long ExternalId, long CategoryExternalId, string Title, string DescriptionMarkdown, double Latitude, double Longitude, IReadOnlyList<ImportedMedia> Media);
 public sealed record ImportedMedia(long ExternalId, string? Title, string Source);

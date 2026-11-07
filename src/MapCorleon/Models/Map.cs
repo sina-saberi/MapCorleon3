@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using MapCorleon.Services;
+
 namespace MapCorleon.Models;
 
 public sealed class Map : IEntity
@@ -13,6 +16,8 @@ public sealed class Map : IEntity
 
     public Game? Game { get; set; }
     public MapConfig? Config { get; set; }
+    [NotMapped] public Uri? GameArtwork => BundledMapCatalog.Asset(Config?.GameImage);
+    [NotMapped] public Uri? MapArtwork => BundledMapCatalog.Asset(Config?.MapImage);
     public ICollection<Group> Groups { get; set; } = [];
     public ICollection<Timeline> Timelines { get; set; } = [];
     public ICollection<DownloadTask> DownloadTasks { get; set; } = [];

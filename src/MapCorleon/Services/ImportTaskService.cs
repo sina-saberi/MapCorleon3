@@ -24,7 +24,6 @@ public interface IImportTaskService : INotifyPropertyChanged
     Task InitializeAsync();
     Task<IReadOnlyList<DownloadTask>> GetTasksAsync();
     Task<IReadOnlyList<Map>> GetDownloadableMapsAsync();
-    Task<int> EnqueueImportedAsync(IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl = null);
     Task<int> EnqueueAsync(int mapId, bool downloadMedia, bool downloadTiles);
     Task PauseAsync(int taskId);
     Task ResumeAsync(int taskId);
@@ -87,18 +86,9 @@ public sealed class ImportTaskService(
     {
         await using var db = await factory.CreateDbContextAsync();
         return await db.Maps.AsNoTracking().Include(x => x.Game).Include(x => x.Config)
-            .Where(x => x.Config != null)
+            .Where(x => x.Config != null && (x.Config.TilePattern != null || db.Media.Any(media =>
+                media.ExternalId != null && media.Location!.Category!.Group!.MapId == x.Id)))
             .OrderBy(x => x.Game!.Name).ThenBy(x => x.Name).ToListAsync();
-    }
-
-    public async Task<int> EnqueueImportedAsync(
-        IMapProvider provider, ImportResult result, bool downloadMedia, bool downloadTiles, string? sourcePageUrl = null)
-    {
-        await using var db = await factory.CreateDbContextAsync();
-        var mapId = await db.Maps
-            .Where(x => x.ExternalId == result.MapExternalId && x.Name == result.MapName)
-            .Select(x => x.Id).FirstAsync();
-        return await EnqueueCoreAsync(mapId, provider.Key, downloadMedia, downloadTiles, sourcePageUrl);
     }
 
     public async Task<int> EnqueueAsync(int mapId, bool downloadMedia, bool downloadTiles)
@@ -111,7 +101,7 @@ public sealed class ImportTaskService(
             throw new InvalidOperationException("The selected map has no download provider.");
         if (downloadTiles && (string.IsNullOrWhiteSpace(map.Config?.TilePattern) || TileCoverage.Create(map.Config) is null))
             throw new InvalidOperationException("The selected map has no downloadable tile coverage.");
-        var sourcePageUrl = await db.DownloadTasks.AsNoTracking()
+        var sourcePageUrl = map.Config?.SourcePageUrl ?? await db.DownloadTasks.AsNoTracking()
             .Where(x => x.MapId == mapId && x.SourcePageUrl != null)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Select(x => x.SourcePageUrl)

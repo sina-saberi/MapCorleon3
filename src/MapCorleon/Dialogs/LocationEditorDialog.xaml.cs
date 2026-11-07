@@ -16,6 +16,16 @@ public partial class LocationEditorDialog : Window
     private readonly ObservableCollection<SelectedImage> images = [];
     private MapPosition position;
 
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Escape)
+        {
+            e.Handled = true;
+            Close();
+        }
+        base.OnPreviewKeyDown(e);
+    }
+
     public LocationEditorDialog(MapPosition position)
         : this(null, position) { }
 

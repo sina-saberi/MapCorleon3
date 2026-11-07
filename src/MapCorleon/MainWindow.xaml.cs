@@ -1,9 +1,11 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Input;
 using System.Windows.Threading;
 using MapCorleon.Services;
 using MapCorleon.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 namespace MapCorleon;
 
@@ -16,6 +18,13 @@ public partial class MainWindow : Window
     readonly DispatcherTimer saveWindowTimer = new() { Interval = TimeSpan.FromMilliseconds(750) };
     string? windowSessionKey;
     bool exitRequested;
+
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape && App.Services.GetRequiredService<IMapPickService>().Cancel())
+            e.Handled = true;
+        base.OnPreviewKeyDown(e);
+    }
 
     public MainWindow(ShellViewModel vm, ITrayService tray, ISettingsService settings, ILogger<MainWindow> overlayLogger)
     {

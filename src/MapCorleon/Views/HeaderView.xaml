@@ -1,7 +1,7 @@
 <UserControl x:Class="MapCorleon.Views.HeaderView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Border BorderBrush="#2C3B52" BorderThickness="0,0,0,1" Padding="14,9">
+  <Border BorderBrush="#2C3B52" BorderThickness="0,0,0,1" MinHeight="84" ClipToBounds="True">
     <Border.Background>
       <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#121C2B" Offset="0"/>
@@ -9,7 +9,21 @@
         <GradientStop Color="#101A29" Offset="1"/>
       </LinearGradientBrush>
     </Border.Background>
-    <DockPanel>
+    <Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="3*"/><ColumnDefinition Width="7*"/></Grid.ColumnDefinitions>
+      <Border Grid.Column="1" Opacity=".67" IsHitTestVisible="False">
+        <Border.Background>
+          <ImageBrush ImageSource="{Binding CurrentGameArtwork}" Stretch="UniformToFill"/>
+        </Border.Background>
+        <Border.OpacityMask>
+          <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+            <GradientStop Color="Transparent" Offset="0"/>
+            <GradientStop Color="#55000000" Offset=".35"/>
+            <GradientStop Color="Black" Offset="1"/>
+          </LinearGradientBrush>
+        </Border.OpacityMask>
+      </Border>
+    <DockPanel Grid.ColumnSpan="2" Margin="14,12">
       <Border x:Name="TaskPanel" DockPanel.Dock="Right" Width="300" Margin="16,0,0,0" Padding="12,6"
               VerticalAlignment="Center" Background="#19283A" BorderBrush="#365171" BorderThickness="1" CornerRadius="6"
               Visibility="{Binding IsRunning,Converter={StaticResource BoolToVisibility}}">
@@ -52,5 +66,6 @@
         </StackPanel>
       </DockPanel>
     </DockPanel>
+    </Grid>
   </Border>
 </UserControl>

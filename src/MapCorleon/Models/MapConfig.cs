@@ -15,6 +15,10 @@ public sealed class MapConfig : IEntity
     public int? MaxZoom { get; set; }
     public string? TileBoundsJson { get; set; }
     public string? SpriteImagePath { get; set; }
+    public string? SourcePageUrl { get; set; }
+    public int CatalogRevision { get; set; }
+    public string? GameImage { get; set; }
+    public string? MapImage { get; set; }
     public string? LaunchExecutablePath { get; set; }
     public string? LaunchArguments { get; set; }
     public string? LaunchWorkingDirectory { get; set; }

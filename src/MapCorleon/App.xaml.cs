@@ -54,7 +54,9 @@ public partial class App : Application
         services.AddHostedService(provider => provider.GetRequiredService<PlayerLocationCoordinator>());
         services.AddSingleton<IMapSettingsService, MapSettingsService>();
         services.AddSingleton<IMediaDownloadService, MediaDownloadService>();
-        services.AddSingleton<IMapImportSink, EfMapImportSink>();
+        services.AddSingleton<EfMapImportSink>();
+        services.AddSingleton<IMapImportSink>(provider => provider.GetRequiredService<EfMapImportSink>());
+        services.AddSingleton<BundledMapCatalog>();
         services.AddSingleton<IMapProvider, MapGenieProvider>();
         services.AddSingleton<IMapProvider, Kcd2MonasteryMapProvider>();
         services.AddSingleton<IMapProviderResolver, MapProviderResolver>();
@@ -103,6 +105,7 @@ public partial class App : Application
         var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
         await using var db = await factory.CreateDbContextAsync();
         await DbSchemaInitializer.InitializeAsync(db);
+        await Task.Run(() => host.Value.Services.GetRequiredService<BundledMapCatalog>().SeedAsync());
         await DbSeeder.SeedAsync(db);
         await host.Value.Services.GetRequiredService<IImportTaskService>().InitializeAsync();
         host.Value.Services.GetRequiredService<MainWindow>().Show(); base.OnStartup(e);

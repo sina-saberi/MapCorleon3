@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
 using MapCorleon.Models;
 using MapCorleon.Services;
 using MapCorleon.ViewModels;
@@ -12,6 +11,7 @@ public partial class TimelineDialog : Window
 {
     private readonly ShellViewModel shell;
     private readonly ITimelineService timelines;
+    private Dictionary<int, int> percentages = [];
     private bool busy;
 
     public TimelineDialog(ShellViewModel shell)
@@ -19,25 +19,19 @@ public partial class TimelineDialog : Window
         InitializeComponent();
         this.shell = shell;
         timelines = App.Services.GetRequiredService<ITimelineService>();
-        busy = true;
         DataContext = shell;
         RefreshCards();
-        busy = false;
+        Loaded += async (_, _) => await RunAsync(() => Task.CompletedTask);
     }
 
     private void RefreshCards()
     {
         var canDelete = shell.Timelines.Count > 1;
         TimelineCards.ItemsSource = shell.Timelines.Select(timeline =>
-            new TimelineCard(timeline, timeline.Id == shell.SelectedTimeline?.Id, canDelete)).ToArray();
+            new TimelineCard(timeline, timeline.Id == shell.SelectedTimeline?.Id, canDelete,
+                percentages.GetValueOrDefault(timeline.Id))).ToArray();
         EmptyMessage.Visibility = shell.Timelines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         AddButton.IsEnabled = shell.CurrentMap is not null;
-    }
-
-    private async void Map_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (busy || MapBox.SelectedItem is not Map map || map.Id == shell.CurrentMap?.Id) return;
-        await RunAsync(() => shell.LoadAsync(preferredMapId: map.Id));
     }
 
     private async void Activate_Click(object sender, RoutedEventArgs e)
@@ -92,6 +86,7 @@ public partial class TimelineDialog : Window
         try
         {
             await action();
+            if (shell.CurrentMap is { } map) percentages = await timelines.GetPercentagesAsync(map.Id);
         }
         catch (Exception ex)
         {
@@ -99,7 +94,6 @@ public partial class TimelineDialog : Window
         }
         finally
         {
-            MapBox.GetBindingExpression(ComboBox.SelectedItemProperty)?.UpdateTarget();
             RefreshCards();
             DialogContent.IsEnabled = true;
             busy = false;
@@ -112,5 +106,8 @@ public partial class TimelineDialog : Window
         if (busy) e.Cancel = true;
     }
 
-    private sealed record TimelineCard(Timeline Timeline, bool IsActive, bool CanDelete);
+    private sealed record TimelineCard(Timeline Timeline, bool IsActive, bool CanDelete, int Percentage)
+    {
+        public string Label => IsActive ? $"{Timeline.Name} · Active" : Timeline.Name;
+    }
 }

@@ -61,8 +61,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS "IX_Marked_Locations_TimelineId_LocationId" ON
     {
         var columns = new (string Table, string Name, string Definition)[]
         {
+            ("Games", "CatalogName", "TEXT NULL"),
             ("Maps", "ExternalId", "INTEGER NULL"), ("Groups", "ExternalId", "INTEGER NULL"),
             ("Categories", "ExternalId", "INTEGER NULL"), ("Categories", "IconKey", "TEXT NULL"),
+            ("Categories", "IconLayersJson", "TEXT NULL"), ("Categories", "IconFont", "TEXT NULL"),
+            ("Categories", "IconAtlas", "TEXT NULL"),
             ("Categories", "IconX", "INTEGER NULL"), ("Categories", "IconY", "INTEGER NULL"),
             ("Categories", "IconWidth", "INTEGER NULL"), ("Categories", "IconHeight", "INTEGER NULL"),
             ("Categories", "IconPixelRatio", "REAL NULL"), ("Locations", "ExternalId", "INTEGER NULL"),
@@ -73,6 +76,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS "IX_Marked_Locations_TimelineId_LocationId" ON
             ("Map Config", "TileBoundsJson", "TEXT NULL"),
             ("Map Config", "MinZoom", "INTEGER NULL"), ("Map Config", "MaxZoom", "INTEGER NULL"),
             ("Map Config", "SpriteImagePath", "TEXT NULL"),
+            ("Map Config", "SourcePageUrl", "TEXT NULL"), ("Map Config", "CatalogRevision", "INTEGER NOT NULL DEFAULT 0"),
+            ("Map Config", "GameImage", "TEXT NULL"), ("Map Config", "MapImage", "TEXT NULL"),
             ("Map Config", "LaunchExecutablePath", "TEXT NULL"),
             ("Map Config", "LaunchArguments", "TEXT NULL"),
             ("Map Config", "LaunchWorkingDirectory", "TEXT NULL"),

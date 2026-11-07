@@ -8,6 +8,7 @@
     <InternalsVisibleTo Include="MapCorleon.Tests" />
     <Resource Include="Assets\AppIcon.png" />
     <Resource Include="Assets\AppIcon.ico" />
+    <Content Include="Catalog\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
     <ProjectReference Include="..\MapCorleon.Contracts\MapCorleon.Contracts.csproj" />
     <ProjectReference Include="..\MapCorleon.Games.Skyrim\MapCorleon.Games.Skyrim.csproj" />

@@ -136,6 +136,10 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(Query);
     public string? CurrentMapName => currentMapName;
+    public Uri? CurrentGameArtwork => CurrentMap is { } map
+        ? map.GameArtwork ?? Maps.Where(item => item.GameId == map.GameId)
+            .Select(item => item.GameArtwork).FirstOrDefault(art => art is not null)
+        : null;
     public bool IsAllFilter => MarkFilter == MarkFilter.All;
     public bool IsMarkedFilter => MarkFilter == MarkFilter.Marked;
     public bool IsUnmarkedFilter => MarkFilter == MarkFilter.Unmarked;
@@ -189,6 +193,7 @@ public sealed class ShellViewModel : ViewModelBase
         private set
         {
             if (!Set(ref currentMap, value)) return;
+            OnPropertyChanged(nameof(CurrentGameArtwork));
             OnPropertyChanged(nameof(IsPlayerTrackingSupported));
             OnPropertyChanged(nameof(CanLaunchGame));
             ((RelayCommand)LaunchGameCommand).RaiseCanExecuteChanged();

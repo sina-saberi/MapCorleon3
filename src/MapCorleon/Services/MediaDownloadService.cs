@@ -24,10 +24,11 @@ public sealed class MediaDownloadService(
             {
                 MapId = x.Location!.Category!.Group!.MapId,
                 GameId = x.Location.Category.Group.Map!.GameId,
-                Provider = x.Location.Category.Group.Map.Config!.Provider
+                Provider = x.Location.Category.Group.Map.Config!.Provider,
+                x.Location.Category.Group.Map.Config!.SourcePageUrl
             })
             .SingleAsync(ct);
-        var referrer = await db.DownloadTasks.AsNoTracking()
+        var referrer = context.SourcePageUrl ?? await db.DownloadTasks.AsNoTracking()
             .Where(x => x.MapId == context.MapId && x.SourcePageUrl != null)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Select(x => x.SourcePageUrl)
@@ -49,7 +50,7 @@ public sealed class MediaDownloadService(
             : null;
         if (source is null)
             throw new InvalidOperationException(
-                $"The local file is missing and media #{media.Id} has no saved source URL. Reimport the map once to restore it.");
+                $"The local file is missing and media #{media.Id} has no saved source URL.");
 
         var asset = await storage.CacheAsync(provider, storageKind, source,
             Path.GetFileName(new Uri(source).AbsolutePath), ct, referrer);

@@ -48,7 +48,6 @@ public partial class MapView
         MapControl.MapPointerMoved += MapPointerMoved;
         MapControl.PreviewMouseDown += (_, _) => PauseFollowingForUserNavigation();
         MapControl.PreviewMouseWheel += (_, _) => PauseFollowingForUserNavigation();
-        MapControl.PreviewKeyDown += MapKeyDown;
         followResumeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
         followResumeTimer.Tick += (_, _) =>
         {
@@ -169,8 +168,10 @@ public partial class MapView
             tileSchema.Extent.MaxX, tileSchema.Extent.MaxY);
         MapControl.Map = map;
         RebuildLocations();
-        if (!string.IsNullOrWhiteSpace(config.SpriteImagePath) && File.Exists(config.SpriteImagePath))
-            spriteSource = new Uri(Path.GetFullPath(config.SpriteImagePath)).AbsoluteUri;
+        var sprite = config.SpriteImagePath;
+        if (!string.IsNullOrWhiteSpace(sprite))
+            spriteSource = (Path.IsPathRooted(sprite) && File.Exists(sprite)
+                ? new Uri(Path.GetFullPath(sprite)) : BundledMapCatalog.Asset(sprite))?.AbsoluteUri;
         RebuildLocations();
 
         var latitude = (config.MinLatitude + config.MaxLatitude) / 2;
@@ -318,12 +319,6 @@ public partial class MapView
         MapControl.Cursor = isPicking ? Cursors.Cross : Cursors.Arrow;
         PickHint.Visibility = isPicking ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
         if (isPicking) MapControl.Focus();
-    }
-
-    private void MapKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Escape || !mapPicker.Cancel()) return;
-        e.Handled = true;
     }
 
     private void PauseFollowingForUserNavigation()

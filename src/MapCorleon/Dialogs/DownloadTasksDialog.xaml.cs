@@ -13,6 +13,7 @@ public partial class DownloadTasksDialog : Window
     private bool reloading;
     private bool reloadPending;
     private bool refreshScheduled;
+    private Map? selectedMap;
 
     public DownloadTasksDialog()
     {
@@ -27,8 +28,6 @@ public partial class DownloadTasksDialog : Window
             tasks.TasksChanged += TasksChanged;
             subscribed = true;
         }
-        MapBox.ItemsSource = await tasks.GetDownloadableMapsAsync();
-        if (MapBox.Items.Count > 0) MapBox.SelectedIndex = 0;
         await ReloadAsync();
     }
 
@@ -47,10 +46,31 @@ public partial class DownloadTasksDialog : Window
         refreshScheduled = false;
         await ReloadAsync();
     }
-    private async void Refresh_Click(object sender, RoutedEventArgs e) => await ReloadAsync();
+    private async void ChooseMap_Click(object sender, RoutedEventArgs e)
+    {
+        ChooseMapButton.IsEnabled = false;
+        try
+        {
+            var picker = new MapPickerDialog(await tasks.GetDownloadableMapsAsync(), downloading: true) { Owner = this };
+            if (picker.ShowDialog() != true || picker.SelectedMap is not { } map) return;
+            selectedMap = map;
+            SelectedMapName.Text = map.DisplayName;
+            AddTiles.IsEnabled = map.Config is { TilePattern.Length: > 0 } config && TileCoverage.Create(config) is not null;
+            AddTiles.IsChecked = false;
+            AddMedia.IsChecked = true;
+            DownloadOptions.Visibility = Visibility.Visible;
+            AddStatus.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            ShowAddStatus($"Could not load maps: {ex.Message}");
+        }
+        finally { ChooseMapButton.IsEnabled = true; }
+    }
+
     private async void AddTask_Click(object sender, RoutedEventArgs e)
     {
-        if (MapBox.SelectedItem is not Map map)
+        if (selectedMap is not { } map)
         {
             ShowAddStatus("Select an imported map.");
             return;
@@ -63,20 +83,22 @@ public partial class DownloadTasksDialog : Window
             return;
         }
 
-        AddButton.IsEnabled = false;
+        AddButton.IsEnabled = ChooseMapButton.IsEnabled = false;
         try
         {
             var count = await tasks.EnqueueAsync(map.Id, media, tiles);
             ShowAddStatus(count == 1
                 ? "Added 1 separate download item."
                 : $"Added {count} separate download items.");
+            DownloadOptions.Visibility = Visibility.Collapsed;
+            selectedMap = null;
             await ReloadAsync();
         }
         catch (Exception ex)
         {
             ShowAddStatus($"Could not add download: {ex.Message}");
         }
-        finally { AddButton.IsEnabled = true; }
+        finally { AddButton.IsEnabled = ChooseMapButton.IsEnabled = true; }
     }
     private void ShowAddStatus(string text)
     {
